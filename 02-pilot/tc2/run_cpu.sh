@@ -15,13 +15,13 @@
 
 set -euo pipefail
 if [[ -z "${SLURM_JOB_ID:-}" || $# -lt 1 ]]; then
-  printf 'Submit via sbatch: run_cpu.sh human-eval|make-smoke|validate-cases|test [arguments]\n' >&2
+  printf 'Submit via sbatch: run_cpu.sh human-eval|make-smoke|validate-cases|dataset|media|vbench-cache|test [arguments]\n' >&2
   exit 2
 fi
 AI6132_TASK="$1"
 shift
 case "$AI6132_TASK" in
-  human-eval|make-smoke|validate-cases) ;;
+  human-eval|make-smoke|validate-cases|dataset|media|vbench-cache|assets) ;;
   test) [[ $# -eq 0 ]] || { printf 'test takes no arguments\n' >&2; exit 2; } ;;
   *) printf 'Unknown CPU task: %s\n' "$AI6132_TASK" >&2; exit 2 ;;
 esac
@@ -42,6 +42,7 @@ export PYTHONUNBUFFERED=1
 export PYTHONDONTWRITEBYTECODE=1
 export CUDA_VISIBLE_DEVICES=""
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
+export PYTHONPATH="$AI6132_CODE${PYTHONPATH:+:$PYTHONPATH}"
 python -c 'import sys; assert sys.version_info >= (3, 10), "Python 3.10+ required"'
 printf 'Job: %s; node: %s; task: %s; environment: %s\n' \
   "$SLURM_JOB_ID" "$(hostname)" "$AI6132_TASK" "$CONDA_PREFIX"
@@ -49,8 +50,16 @@ case "$AI6132_TASK" in
   human-eval) python 05-human-evaluation/human_eval.py "$@" ;;
   make-smoke) python 02-pilot/tc2/make_smoke_case.py "$@" ;;
   validate-cases) python 03-generation/ltx_video/run_cases.py "$@" --validate-only ;;
+  dataset) python -m ai6132_benchmark.dataset "$@" ;;
+  assets) python -m ai6132_benchmark.assets "$@" ;;
+  media) python -m ai6132_benchmark.media "$@" ;;
+  vbench-cache)
+    [[ " $* " == *" --receipt-cache "* ]] || { printf 'CPU mode only writes a prepared-cache receipt.\n' >&2; exit 2; }
+    python -m ai6132_benchmark.vbench "$@"
+    ;;
   test)
     python -m unittest discover -s 03-generation/ltx_video -p 'test_*.py' -v
     python -m unittest discover -s 05-human-evaluation -p 'test_*.py' -v
+    python -m unittest discover -s tests -p 'test_*.py' -v
     ;;
 esac

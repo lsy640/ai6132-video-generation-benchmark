@@ -2,7 +2,7 @@
 
 使用官方两阶段 I2V，首图条件为第 0 帧，关闭提示词扩写。
 
-2026-11-14 已在 TC2 L40S 上完成一条合成环境测试：`768×432 / 121 帧 / 24 fps`，H.264 原片完整解码通过，时长约 5.04 秒。详见 [验证记录](../../02-pilot/tc2/VALIDATION.md)。共同试跑和正式生成待 A 提供数据后进行，参数由全组试跑后冻结。
+2026-11-14 已在 TC2 L40S 上完成一条合成环境测试：`768×432 / 121 帧 / 24 fps`，H.264 原片完整解码通过，时长约 5.04 秒。该记录仅为历史实测；当前129/513帧规范仍须用3个独立共同样本验证。详见 [验证记录](../../02-pilot/tc2/VALIDATION.md)。
 
 ## 环境与权重
 
@@ -30,31 +30,31 @@ sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/install_ltx.sh
 
 ## 共享样本清单
 
-由 A 冻结 `cases.csv` 和横版首图。清单格式示例：
+由 A 冻结原始 `cases.csv` 和横版首图，生成器只读取七列规范清单 `cases.canonical.csv`：
 
 ```csv
-case_id,category,image_path,prompt,seed
-single_001,single_person,images/single_001.png,"Original English prompt from the shared manifest",42
+case_id,category,image_path,prompt,seed,source_frame_num,target_frames
+case_0001,single-human,dataset/01.jpg,"Original English prompt from the shared manifest",42,512,513
 ```
 
-`case_id` 由英文字母、数字、点、下划线或短横线组成，整批唯一。`category` 保持 A 的原始标签，正式清单包含六类。`seed` 为 0 至 2³²−1 的整数，prompt 保留原文。
+`case_id` 格式为 `case_` 加四位数字且整批唯一，`category` 保持 A 原始标签，seed为0至2³²−1整数，prompt保留原文。正式清单固定为11类24案例、18条129帧和6条513帧，逐条校验source_frame_num/target_frames的128→129、512→513映射。详见[清单适配](../../01-dataset/README.md)。
 
-首图路径字段也接受 `image`、`first_frame`、`first_frame_path`、`reference_image`；多个字段同时存在时非空值必须相同。相对路径以 CSV 所在目录为基准，也可使用 `--image-root` 指定。首图由 A 统一裁为 16:9，与输出比例一致；官方推理会补边，再裁回请求尺寸。
+首图路径字段统一为 `image_path`。相对路径以 CSV 所在目录为基准，也可使用 `--image-root` 指定。首图由 A 统一裁为 16:9，与输出比例一致；官方推理会补边，再裁回请求尺寸。
 
 ```bash
 # 检查清单、种子、图片路径和样本顺序。
 export AI6132_CPU_ENV="$AI6132_ROOT/env"
 sbatch 02-pilot/tc2/run_cpu.sh validate-cases \
-  --cases /absolute/path/cases.csv --phase formal --per-category 2
+  --cases 01-dataset/cases.canonical.csv --phase formal
 ```
 
 ## Smoke、共同试跑、正式批次
 
 三个阶段各用独立输出目录：
 
-- `--phase smoke`：1 条合成样本，仅用于环境检查。
-- `--phase pilot`：A 提供的 3 条共同试跑样本，用于检查生成、解码和评分。
-- `--phase formal --per-category 2`：CSV 中每类前 2 组，按 CSV 原顺序运行，共 12 条；小组批准统一扩展后用 `--per-category 4` 共 24 条。
+- `--phase smoke`：1 条采用同一规范字段的合成样本，目标129帧，仅用于环境检查。
+- `--phase pilot`：A 提供的 3 条独立共同试跑样本，必须同时覆盖129和513帧，用于检查生成、解码和评分。
+- `--phase formal`：默认完整使用A的11类24案例，18条129帧＋6条513帧，保持原顺序。
 
 ```bash
 # 共同试跑。
@@ -63,20 +63,20 @@ sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/run_ltx.sh \
 
 # 全组冻结正式数据和试跑配置后：
 sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/run_ltx.sh \
-  formal /absolute/shared/cases.csv "$AI6132_ROOT/outputs/ltx-formal" --per-category 2
+  formal "$AI6132_CODE/01-dataset/cases.canonical.csv" "$AI6132_ROOT/outputs/ltx-formal-mixed"
 ```
 
-同一命令再次运行时，只继续尚未启动的 case。已成功、失败或中断的记录均保留，技术失败由小组确认后处理。正式批次始终使用同一输出目录和冻结的配置、输入及权重，每个 case 按清单种子生成一次。扩至 24 条时，需从一开始就使用完整 24 条清单，续跑时只改 `--per-category 4`。
+同一命令再次运行时，只继续尚未启动的case；成功、失败或中断均保留，不自动重抽。新混合协议使用独立目录，不修改旧批次冻结配置。513帧尚需共同GPU试跑验收，合法帧数不代表已验证资源可行；不得因失败静默改成续写或降低长度。
 
-`selection.json` 单独记录当前正式选中的 12 或 24 条及顺序，允许 12→24 扩批，拒绝缩回 12 条。`runs.csv` 在首个 worker 启动前就覆盖全部选中样本；未启动样本为 `not_started`，无耗时和 GPU 实测值，也不会创建 case 目录，后续可正常启动。中断后的既有尝试仍保留为 `incomplete`，不会自动重抽。B 应以 `selection.json` 核对交付行数，并保留 `not_started`/`incomplete` 等非成功状态；不能只统计已有视频。
+`selection.json` 冻结协议、阶段、规范清单哈希及全部案例顺序，必须与 `batch.json` 中的完整清单一致。`runs.csv` 从首个worker前覆盖所有案例，未启动为not_started、无实测GPU/耗时，中断尝试为incomplete；不为未启动项创建目录。B必须核对全部行和状态。
 
-代码哈希也在 `batch.json` 中冻结。升级 runner 后不能修改旧记录来绕过校验；保留旧输出，使用原代码续跑，或经小组确认后为新代码建立独立批次。只有旧版 attempt log 而没有 `selection.json` 时，单独读取记录不会猜测批次大小。
+代码哈希也在 `batch.json` 中冻结。升级 runner 后不能修改旧记录来绕过校验；保留旧输出，使用原代码续跑，或经小组确认后为新代码建立独立批次。读取记录也必须提供匹配的 `selection.json`。
 
-试跑阶段可通过 `--width`、`--height`、`--num-frames`、`--frame-rate` 调整配置，正式运行时锁定参数。官方代码只在 GPU 总显存小于 30 GiB 时启用 CPU offload，因此 48GB L40S 上记录为 requested=true、effective=false。
+试跑可调整width/height/frame-rate，正式运行时冻结；生成帧数始终取自每案例target_frames。官方只在GPU总显存小于30GiB时启用CPU offload；48GB L40S记录requested=true、effective=false，长片可行性需实测。
 
 ## 输出与计时口径
 
-每个 case 的 `native/` 保存原始 MP4。全部帧可解码、尺寸/帧数/fps 符合请求且时长不少于 5 秒时记为 `success`；画面质量由后续评审判断。
+每个case的native/保留完整原片。完整解码且尺寸、逐条帧数与fps符合请求时记success。画面质量由评审判断，不能用质量低替代技术失败。
 
 `runs.csv` 与 `selection.json` 一起交给 B，含 case/model ID、种子、版本、配置路径及哈希、原生规格、真实状态与失败原因、GPU/驱动、耗时和显存。`batch.json` 固定完整输入清单和图片哈希；`pipeline.json` 是实际配置；`environment.txt` 保存真实安装版本；每个已启动 case 有 `request.json`、`result.json`（中断时可能缺失）和 `inference.log`。
 
@@ -90,6 +90,6 @@ sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/run_ltx.sh \
 sbatch 02-pilot/tc2/run_cpu.sh test
 ```
 
-测试使用合成数据，覆盖清单冻结、完整交付记录、扩批/续跑，以及人评素材与评分校验；不替代 GPU 共同试跑。历史 20 项测试结果见环境验证记录，修复后的验证结果另行记录。
+测试使用合成数据，覆盖规范字段、全部24例与逐案例帧数、清单冻结、完整交付记录、续跑，以及人评素材与评分校验；不替代 GPU 共同试跑。验证结果见 [验证记录](../../02-pilot/tc2/VALIDATION.md)。
 
 官方依据：[仓库与安装](https://github.com/Lightricks/LTX-Video/tree/50f0aef1297574a4b29acbdb874e3a363a6d5f2e)、[2B 两阶段配置](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/configs/ltxv-2b-0.9.8-distilled.yaml)、[推理入口](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/ltx_video/inference.py)、[PyTorch 2.5.1 安装](https://pytorch.org/get-started/previous-versions/#v251)。

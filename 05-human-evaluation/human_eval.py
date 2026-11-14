@@ -75,6 +75,9 @@ def verify_packet(frozen, packet_root, rater=None):
     """Check retained or received files against a trusted preparation receipt."""
     if not isinstance(frozen, dict) or frozen.get("tool_version") != 2:
         raise InputError("需要 v2 preparation.json；旧评分包请保留原件，在新目录重新准备并核对素材")
+    expected = {"formal": 96, "calibration": 3}.get(frozen.get("phase"))
+    if expected is None or frozen.get("expected_clips") != expected:
+        raise InputError("准备记录必须符合当前规范：正式96条，校准3条")
     raters = frozen.get("raters")
     if not isinstance(raters, list):
         raise InputError("preparation.json 缺少评审列表")
@@ -197,8 +200,8 @@ def prepare(manifest, out, raters, seed, expected_clips, phase):
     rows = load_manifest(manifest, check_files=True, snapshot=manifest_snapshot)
     if len(rows) != expected_clips:
         raise InputError(f"清单有 {len(rows)} 条，预期 {expected_clips} 条；请先核对批次")
-    if phase == "formal" and expected_clips not in (48, 96):
-        raise InputError("正式批次须为 48 或 96 条；校准请显式选择 --phase calibration")
+    if phase == "formal" and expected_clips != 96:
+        raise InputError("正式批次须为 96 条；校准请显式选择 --phase calibration")
     if phase == "calibration" and expected_clips != 3:
         raise InputError("按计划，校准批次须为 3 条")
     out = Path(out)

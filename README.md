@@ -27,3 +27,16 @@ AI6132 Project 1 · Technical Review
 - [人工盲评准备与收表检查](05-human-evaluation/README.md)
 
 共享输入由 A 统一冻结。仓库保存代码、配置和说明；权重、视频、评分及匿名映射另行存储。
+
+## A 实际清单与 B 的运行入口
+
+当前基准采用A提供的11类24案例，按原分配生成18条129帧短片与6条513帧长片，四模型共96条。人工、VBench、Qwen均覆盖完整时长，Qwen另做长片四段诊断。
+
+2026-11-14：47项CPU回归通过，固定版本资产核验通过。B的正式生成作业54400正在TC2N08的L40S上运行，按用户指示跳过生成试跑。本次代码在生成期间先行同步main，正式完成情况以完整24例输出及后续全片验收记录为准。见 [验证记录](02-pilot/tc2/VALIDATION.md)。
+
+- [原始输入与规范清单](01-dataset/README.md)
+- [B 的 Hunyuan 生成与试跑门槛](03-generation/hunyuan_video/README.md)
+- [全片预处理、匿名交接与 VBench](04-vbench-evaluation/README.md)
+- [Qwen 整体及分段评审](06-vlm-evaluation/README.md)
+
+CPU通过 `run_cpu.sh`，生成和GPU评估通过 `run_b_gpu.sh` 提交。真实模型的共同试跑与正式实验状态须以验收记录为准，不以代码或模拟测试完成代替。

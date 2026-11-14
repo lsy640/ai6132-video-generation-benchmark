@@ -28,8 +28,10 @@ export HF_HOME="$AI6132_ROOT/hf-cache"
 export PYTHONUNBUFFERED=1
 export TOKENIZERS_PARALLELISM=false
 module load miniconda3/25.5.1
+set +u
 eval "$(conda shell.bash hook)"
 conda activate "$AI6132_ROOT/env"
+set -u
 python "$AI6132_CODE/03-generation/ltx_video/run_cases.py" \
   --cases "$AI6132_CASES" --phase "$AI6132_PHASE" \
   --upstream "$AI6132_ROOT/LTX-Video" --assets "$AI6132_ROOT/ltx_assets" \

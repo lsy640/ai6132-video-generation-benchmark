@@ -6,7 +6,11 @@ import hashlib
 import io
 import json
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from ai6132_benchmark.dataset import FIELDS, validate_profile
 
 UPSTREAM_COMMIT = "50f0aef1297574a4b29acbdb874e3a363a6d5f2e"
 MODEL_ID = "ltxv-2b-0.9.8-distilled"
@@ -28,7 +32,6 @@ TEXT_FILES = (
     "tokenizer/spiece.model",
     "tokenizer/tokenizer_config.json",
 )
-IMAGE_ALIASES = ("image_path", "image", "first_frame", "first_frame_path", "reference_image")
 
 
 def digest(path: Path) -> str:
@@ -59,16 +62,14 @@ def read_cases(csv_path: Path, image_root: Path | None = None, *, csv_bytes: byt
         fields = reader.fieldnames or []
         if len(fields) != len(set(fields)):
             raise ValueError("Duplicate CSV column names")
-        missing = {"case_id", "category", "prompt", "seed"} - set(fields)
-        aliases = [key for key in IMAGE_ALIASES if key in fields]
-        if missing or not aliases:
-            raise ValueError(f"Required fields: case_id,category,image_path,prompt,seed; missing={sorted(missing)}, image columns={aliases}")
+        if fields != FIELDS:
+            raise ValueError(f"Canonical manifest requires fields in order: {','.join(FIELDS)}")
         rows, seen = [], set()
         for number, row in enumerate(reader, 2):
             if None in row or any(row.get(key) is None for key in fields):
                 raise ValueError(f"Malformed CSV row {number}")
             case_id = row["case_id"].strip()
-            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,99}", case_id) or case_id in seen:
+            if not re.fullmatch(r"case_[0-9]{4}", case_id) or case_id in seen:
                 raise ValueError(f"Invalid or duplicate case_id at row {number}: {case_id!r}")
             seen.add(case_id)
             category, prompt = row["category"].strip(), row["prompt"]
@@ -77,15 +78,17 @@ def read_cases(csv_path: Path, image_root: Path | None = None, *, csv_bytes: byt
             raw_seed = row["seed"].strip()
             if not raw_seed.isascii() or not raw_seed.isdecimal() or not 0 <= int(raw_seed) < 2**32:
                 raise ValueError(f"seed for {case_id} must be an explicit integer in [0, 2**32)")
-            values = [row[key].strip() for key in aliases if row[key].strip()]
-            if not values or len(set(values)) != 1:
-                raise ValueError(f"Missing or conflicting image path aliases for {case_id}")
-            path = Path(values[0]).expanduser()
+            if not row['image_path'].strip():
+                raise ValueError(f'Missing image_path for {case_id}')
+            path = Path(row['image_path']).expanduser()
             path = (path if path.is_absolute() else root / path).resolve()
             if not path.is_file():
                 raise ValueError(f"Missing shared first image for {case_id}: {path}")
-            rows.append({"case_id": case_id, "category": category, "image_path": str(path),
-                         "image_sha256": digest(path), "prompt": prompt, "seed": int(raw_seed)})
+            item = {"case_id": case_id, "category": category, "image_path": str(path),
+                    "image_sha256": digest(path), "prompt": prompt, "seed": int(raw_seed)}
+            item.update(target_frames=int(row['target_frames']), source_frame_num=int(row['source_frame_num']))
+            validate_profile([item], formal=False)
+            rows.append(item)
     if not rows:
         raise ValueError("cases.csv is empty")
     return rows
@@ -97,7 +100,11 @@ def read_manifest_snapshot(csv_path: Path, image_root: Path | None = None) -> tu
     return read_cases(csv_path, image_root, csv_bytes=snapshot), hashlib.sha256(snapshot).hexdigest()
 
 
-def select_cases(rows: list[dict], phase: str, per_category: int) -> list[dict]:
+def select_cases(rows: list[dict], phase: str) -> list[dict]:
+    """Use the entire canonical manifest; no category-based subset selection."""
+    validate_profile(rows, formal=phase == 'formal')
+    if phase == 'formal':
+        return rows
     if phase == "smoke":
         if len(rows) != 1:
             raise ValueError("Environment smoke CSV must contain exactly 1 non-evaluation case")
@@ -105,19 +112,10 @@ def select_cases(rows: list[dict], phase: str, per_category: int) -> list[dict]:
     if phase == "pilot":
         if len(rows) != 3:
             raise ValueError("Pilot CSV must contain exactly 3 independent calibration cases")
+        if {row['target_frames'] for row in rows} != {129, 513}:
+            raise ValueError('Pilot must include both 129-frame and 513-frame cases')
         return rows
-    counts = {}
-    for row in rows:
-        counts[row["category"]] = counts.get(row["category"], 0) + 1
-    if len(counts) != 6 or any(count < per_category for count in counts.values()):
-        raise ValueError(f"Formal batch needs 6 categories with >= {per_category} cases each: {counts}")
-    taken, selected = {}, []
-    for row in rows:
-        category = row["category"]
-        taken[category] = taken.get(category, 0) + 1
-        if taken[category] <= per_category:
-            selected.append(row)
-    return selected
+    raise ValueError(f'Unknown phase: {phase}')
 
 
 def expected_assets() -> list[str]:

@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "source_sha256": "ed7fbadcd8082990fd306beb0e561b67488ebe6f21d29e0c835e6407e4ba7a67",
+  "canonical_sha256": "cca2f33bcc1a73a9a81ffadc177f80da589ef33d4d22661266af294eea5bd278",
+  "mapping": {
+    "128": 129,
+    "512": 513
+  },
+  "images": {
+    "case_0001": {
+      "sha256": "16b2f0d4f1b408720d46c6e1b617435649005e2ba4b98f37854a437dd24f621e",
+      "width": 5184,
+      "height": 2916
+    },
+    "case_0002": {
+      "sha256": "29f048a2ffbb056a915f4e55f87780692e813bf5b97cd066f59eb3100b21c6e7",
+      "width": 2640,
+      "height": 1485
+    },
+    "case_0003": {
+      "sha256": "d5ea92bca65e1c2ea3cc6a84bd83cf544d0e6eb140c07ba58ecc24816f7cda5c",
+      "width": 5472,
+      "height": 3078
+    },
+    "case_0004": {
+      "sha256": "a5b1160982e04e5056c071f8b94dba887c07c8ae3a128c4083ece4aeda283bd7",
+      "width": 6384,
+      "height": 3591
+    },
+    "case_0005": {
+      "sha256": "0615c593e59b0547edcdfacb450bbb3b52b7c59f51e72d8106244d9830a6c075",
+      "width": 5040,
+      "height": 2835
+    },
+    "case_0006": {
+      "sha256": "74ce0a48a3ac9d9c6daf1959fd0e33c31000c5e2f7b80fe8247935a47c668606",
+      "width": 5472,
+      "height": 3078
+    },
+    "case_0007": {
+      "sha256": "fe258612c43ed644a3cf55cf57e3d93892e8e2707bc99b09b53ebafed4c57acc",
+      "width": 5200,
+      "height": 2925
+    },
+    "case_0008": {
+      "sha256": "d5a383c998e54616f5bc224bee0d9ccd8dd1418164ee7a7914e82a62a1d97285",
+      "width": 4000,
+      "height": 2250
+    },
+    "case_0009": {
+      "sha256": "a834255a97cba13e3cb53ddb3871bf46108a51df830663e30562e641335c61d3",
+      "width": 3696,
+      "height": 2079
+    },
+    "case_0010": {
+      "sha256": "70b36990f1ec6b240682dced6e6bbd8b1dc6b9eb36a4a7c39156d8e3bf634838",
+      "width": 4288,
+      "height": 2412
+    },
+    "case_0011": {
+      "sha256": "fe3483570997c494aaeb16830f94e771a02a42166cc8bbda9c0e1a539bb87f25",
+      "width": 2832,
+      "height": 1593
+    },
+    "case_0012": {
+      "sha256": "4f0d108f40c317aa7bc037ec112532695e302bd7f983588b3adf41df739364be",
+      "width": 5824,
+      "height": 3276
+    },
+    "case_0013": {
+      "sha256": "08e8003b4a9d0ce980b9f9b9dadcac9c11255d8e9ff7c04f1176256ed032e5ea",
+      "width": 5120,
+      "height": 2880
+    },
+    "case_0014": {
+      "sha256": "909cac8c0d84d1279f0ad43658be80f010bc89102644ad70a84a57cf16452d6b",
+      "width": 4256,
+      "height": 2394
+    },
+    "case_0015": {
+      "sha256": "75b0d2d6c6ac767da89b9586fc32bfd63617c5e7bf093e418705035e93fde2ab",
+      "width": 5776,
+      "height": 3249
+    },
+    "case_0016": {
+      "sha256": "c01a35d14d3e00be94d7215b64aa6e163da0d9eeeb20f34b3e2d4c0107d14231",
+      "width": 4288,
+      "height": 2412
+    },
+    "case_0017": {
+      "sha256": "1efcfeb84db1336150f319b2e1701f310e941cdd7eab900af25a3e8bd588d6c1",
+      "width": 4000,
+      "height": 2250
+    },
+    "case_0018": {
+      "sha256": "159139311fbbf2357dfd475c765a68ff22ebef771b211d55a1b55864aa3c370f",
+      "width": 6000,
+      "height": 3375
+    },
+    "case_0019": {
+      "sha256": "758abb0f041508506dce6c60367a11feff7c22a93c39eb6674d43861d0d8daa9",
+      "width": 3456,
+      "height": 1944
+    },
+    "case_0020": {
+      "sha256": "ee067cc59e93e4d03476cae59a3f92b55d56229df1ff5c6df60696933632a761",
+      "width": 6000,
+      "height": 3375
+    },
+    "case_0021": {
+      "sha256": "f54539a93bf5473e4f0c67685a3fe676d6436f263759e874657a7670a5db5495",
+      "width": 1920,
+      "height": 1080
+    },
+    "case_0022": {
+      "sha256": "ecc932d9e1fb13b08912b67484052da51a1bf780d16fbf9bad69baf1c64af958",
+      "width": 1920,
+      "height": 1080
+    },
+    "case_0023": {
+      "sha256": "8517b29db37c27eb5a22571d5eb8b8d051cbd6936f8c4e9cc2e009c8cca79a16",
+      "width": 3024,
+      "height": 1701
+    },
+    "case_0024": {
+      "sha256": "d6904dd40b9794dc920b3c2158b0ea5004a43ccb0ae8eb38b185011520c51ec6",
+      "width": 3024,
+      "height": 1701
+    }
+  },
+  "source_sampling_method": "not supplied; do not claim verified random sampling"
+}
