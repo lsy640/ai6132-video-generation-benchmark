@@ -25,4 +25,4 @@ AI6132 Project 1 · Technical Review
 - [LTX-Video 2B 两阶段生成](03-generation/ltx_video/README.md)
 - [人工盲评准备与收表检查](05-human-evaluation/README.md)
 
-正式运行须使用 A 冻结的共享输入，人工评分须由四位成员独立完成。权重、原始视频、未解盲的评分和映射表不存放在本公开仓库。
+共享输入由 A 统一冻结。仓库保存代码、配置和说明；权重、视频、评分及匿名映射另行存储。

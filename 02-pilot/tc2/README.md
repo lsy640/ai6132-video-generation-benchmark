@@ -10,11 +10,11 @@
 sbatch --partition=MGPU-TC2 --qos=normal /path/to/inspect_gpu.sh
 ```
 
-查看输出中的 GPU 型号、显存、驱动和 `CUDA_VISIBLE_DEVICES`。不覆盖调度器分配的 GPU 编号。`--mem` 申请的是系统内存，与 GPU 显存不同。
+查看 GPU 型号、显存、驱动和 `CUDA_VISIBLE_DEVICES`，沿用调度器分配的 GPU 编号。`--mem` 指系统内存。
 
 ## 建立基础环境
 
-`bootstrap_env.sh` 使用 `miniconda3/25.5.1` 模块，在 `AI6132_ROOT` 下建立独立 Python 3.10 环境，安装 FFmpeg、PyTorch 2.5.1 和 torchvision 0.20.1（CUDA 12.1 官方 wheel），并在分配的 GPU 上检查 BF16 矩阵运算。该组合已针对本次 L40S / 570.148.08 驱动选定，不代表所有集群节点都适用。
+`bootstrap_env.sh` 使用 `miniconda3/25.5.1` 模块，在 `AI6132_ROOT` 下建立 Python 3.10 环境，安装 FFmpeg、PyTorch 2.5.1 和 torchvision 0.20.1（CUDA 12.1 wheel），并检查 BF16 矩阵运算。已验证环境为 L40S / 驱动 570.148.08，详见 [验证记录](VALIDATION.md)。
 
 ```bash
 export AI6132_ROOT="$HOME/ai6132-c"
@@ -33,27 +33,27 @@ sbatch --partition=MGPU-TC2 --qos=normal /path/to/install_ltx.sh
 
 ## 完整流程检查与后续批次
 
-尚未拿到 A 的数据时，可以在 Mac/已配置的 Python 环境中建立独立的合成检查输入：
+在本目录运行以下命令，建立合成环境检查输入（需要 Pillow）：
 
 ```bash
 python make_smoke_case.py --out /absolute/private/smoke-input
 ```
 
-将此文件夹上传到项目目录，提交一条环境检查作业。`run_ltx.sh` 默认申请 30GB 系统内存，须符合本人配额：
+上传输入文件夹后提交环境检查作业。`run_ltx.sh` 默认申请 30GB 系统内存：
 
 ```bash
 sbatch --partition=MGPU-TC2 --qos=normal --time=00:30:00 /path/to/run_ltx.sh \
   smoke /absolute/smoke-input/cases.csv /absolute/artifacts/smoke-001
 ```
 
-该输出是合成测试，不能计入共同试跑、评审或模型比较。拿到 A 的三个共同样本后，用独立目录提交：
+合成测试仅用于检查环境。A 提供三个共同试跑样本后，用独立目录提交：
 
 ```bash
 sbatch --partition=MGPU-TC2 --qos=normal /path/to/run_ltx.sh \
   pilot /absolute/shared/pilot_cases.csv /absolute/artifacts/pilot
 ```
 
-全组冻结配置及正式样本后再提交 `formal /absolute/shared/cases.csv /absolute/artifacts/formal --per-category 2`。扩批规则和不重抽规则见生成工具说明。这里的路径均须替换成实际路径，不使用测试输入代替正式数据。
+全组冻结配置及正式样本后，提交 `formal /absolute/shared/cases.csv /absolute/artifacts/formal --per-category 2`。扩批与续跑规则见生成工具说明。示例路径均需替换为实际路径。
 
 ## 作业状态
 
@@ -62,6 +62,6 @@ squeue -u "$USER"
 sacct -j JOB_ID --format=JobID,State,Elapsed,ExitCode
 ```
 
-`PENDING` 表示尚未开始，先查看原因；不能把所有排队状态都当作生成失败。基础环境检查或单条烟雾测试不等于全组 3 个共同试跑样本验收通过。
+`PENDING` 表示作业尚未开始，排队原因见 `squeue`；完成状态和退出码见 `sacct`。
 
-参考：[PyTorch 对应版本安装命令](https://pytorch.org/get-started/previous-versions/)、项目 `PLAN.md`、学校 TC2 用户指南（不上传至本公开仓库）。
+参考：[PyTorch 对应版本安装命令](https://pytorch.org/get-started/previous-versions/)、项目 `PLAN.md`、学校 TC2 用户指南。
