@@ -158,6 +158,20 @@ def worker(payload_path: Path) -> int:
     return 0 if result["status"] == "success" else 1
 
 
+def unstarted_record(case: dict, frozen: dict, output: Path) -> dict:
+    config_path = output / "pipeline.json"
+    return {"case_id": case["case_id"], "category": case["category"], "model_id": MODEL_ID,
+            "phase": frozen["phase"], "seed": case["seed"], "status": "not_started",
+            "failure_reason": "Not started in the selected batch",
+            "weight_version": MODEL_ID, "weight_revision": MODEL_REVISION,
+            "text_encoder_revision": TEXT_REVISION, "upstream_commit": UPSTREAM_COMMIT,
+            "config": str(config_path), "config_sha256": digest(config_path),
+            "case_fingerprint": object_digest({"case": case, "frozen": frozen}),
+            "image_sha256": case["image_sha256"],
+            "offload_requested": frozen["settings"]["offload_to_cpu"],
+            "log_path": str(output / "cases" / case["case_id"] / "inference.log")}
+
+
 def records(output: Path) -> list[dict]:
     result = []
     for case_dir in sorted((output / "cases").glob("*")):
@@ -168,7 +182,17 @@ def records(output: Path) -> list[dict]:
             row = json.loads(started.read_text(encoding="utf-8"))["record"]
             row.update(status="incomplete", failure_reason="No terminal result: process may still run or was interrupted; never automatically rerun")
             result.append(row)
-    return result
+    selection_path = output / "selection.json"
+    if not selection_path.exists():
+        return result  # Read older attempt logs without inventing their batch size.
+    selected = json.loads(selection_path.read_text(encoding="utf-8"))["case_ids"]
+    frozen = json.loads((output / "batch.json").read_text(encoding="utf-8"))
+    cases = {case["case_id"]: case for case in frozen["cases"]}
+    attempts = {row["case_id"]: row for row in result}
+    if set(attempts) - set(selected):
+        raise ValueError("Attempted cases are outside selection.json; refusing an incomplete handoff")
+    return [attempts[case_id] if case_id in attempts else unstarted_record(cases[case_id], frozen, output)
+            for case_id in selected]
 
 
 def export_csv(output: Path):
@@ -253,6 +277,27 @@ def main(argv=None):
         if config_path.exists() and json.loads(config_path.read_text()) != pipeline:
             raise ValueError("Saved pipeline configuration was changed")
         write_json(config_path, pipeline)
+        selection_path = output / "selection.json"
+        selected_ids = {row["case_id"] for row in chosen}
+        if selection_path.exists():
+            previous = json.loads(selection_path.read_text(encoding="utf-8"))
+            if (previous.get("schema_version") != 1 or previous.get("phase") != args.phase or
+                    previous.get("cases_csv_sha256") != cases_csv_sha256):
+                raise ValueError("Selected batch receipt differs from the frozen manifest")
+            if not set(previous["case_ids"]) <= selected_ids:
+                raise ValueError("Cannot shrink the selected batch; retain the expanded handoff denominator")
+        existing_ids = {path.name for path in (output / "cases").glob("*") if path.is_dir()}
+        if not existing_ids <= selected_ids:
+            raise ValueError("Existing attempts are outside the selected batch; do not shrink or mix batches")
+        write_json(selection_path, {
+            "schema_version": 1, "phase": args.phase,
+            "per_category": args.per_category if args.phase == "formal" else None,
+            "cases_csv_sha256": cases_csv_sha256,
+            "case_ids": [case["case_id"] for case in chosen],
+        })
+        # Publish the complete selected denominator before launching any worker.
+        # No case directories are created for not_started rows, so resume can start them.
+        export_csv(output)
         interrupted = False
         try:
             for case in chosen:
@@ -272,14 +317,8 @@ def main(argv=None):
                         print(f"SKIP {case['case_id']}: existing incomplete attempt; inspect its log", flush=True)
                     continue
                 case_dir.mkdir(parents=True)
-                record = {"case_id": case["case_id"], "category": case["category"], "model_id": MODEL_ID,
-                          "phase": args.phase, "seed": case["seed"], "status": "running",
-                          "weight_version": MODEL_ID, "weight_revision": MODEL_REVISION,
-                          "text_encoder_revision": TEXT_REVISION, "upstream_commit": UPSTREAM_COMMIT,
-                          "config": str(config_path), "config_sha256": digest(config_path),
-                          "case_fingerprint": object_digest({"case": case, "frozen": frozen}),
-                          "image_sha256": case["image_sha256"], "offload_requested": args.offload_to_cpu,
-                          "started_at": utc_now(), "log_path": str(case_dir / "inference.log")}
+                record = unstarted_record(case, frozen, output)
+                record.update(status="running", failure_reason="", started_at=utc_now())
                 payload = {"case": case, "settings": settings, "upstream": str(upstream),
                            "config": str(config_path), "record": record}
                 request = case_dir / "request.json"
@@ -298,7 +337,6 @@ def main(argv=None):
             print("Interrupted. Existing attempts are retained and will not be generated again.", file=sys.stderr)
         finally:
             export_csv(output)
-        selected_ids = {row["case_id"] for row in chosen}
         finished = {row["case_id"] for row in records(output) if row["case_id"] in selected_ids and row["status"] == "success"}
         print(f"Successful native clips: {len(finished)}/{len(chosen)}. Manifest: {output / 'runs.csv'}")
         return 0 if finished == selected_ids and not interrupted else 1

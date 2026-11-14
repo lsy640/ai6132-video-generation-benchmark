@@ -63,6 +63,56 @@ class InputError(ValueError):
     pass
 
 
+def file_sha256(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def verify_packet(frozen, packet_root, rater=None):
+    """Check retained or received files against a trusted preparation receipt."""
+    if not isinstance(frozen, dict) or frozen.get("tool_version") != 2:
+        raise InputError("需要 v2 preparation.json；旧评分包请保留原件，在新目录重新准备并核对素材")
+    raters = frozen.get("raters")
+    if not isinstance(raters, list):
+        raise InputError("preparation.json 缺少评审列表")
+    validate_raters(raters)
+    if rater is not None and rater not in raters:
+        raise InputError(f"未知 rater_id：{rater}")
+    hashes = frozen.get("immutable_files_sha256")
+    if not isinstance(hashes, dict) or not hashes:
+        raise InputError("preparation.json 缺少评分包文件哈希")
+    required = {f"raters/{name}/{filename}" for name in raters
+                for filename in ("order.csv", "评分说明.txt")}
+    if not required <= hashes.keys() or not any(name.startswith("assets/") for name in hashes):
+        raise InputError("preparation.json 的评分包文件清单不完整")
+    root = Path(packet_root).resolve()
+    checked = 0
+    for relative, expected in hashes.items():
+        path = Path(relative)
+        if (path.is_absolute() or ".." in path.parts or
+                not path.parts or path.parts[0] not in {"assets", "raters"} or
+                path.as_posix() != relative or
+                (path.parts[0] == "assets" and len(path.parts) != 2) or
+                (path.parts[0] == "raters" and
+                 (len(path.parts) != 3 or path.parts[1] not in raters or
+                  path.parts[2] not in {"order.csv", "评分说明.txt"})) or
+                not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected)):
+            raise InputError(f"preparation.json 中有无效的冻结文件：{relative}")
+        if rater is not None and path.parts[0] == "raters" and path.parts[1] != rater:
+            continue
+        target = (root / path).resolve()
+        if not target.is_relative_to(root) or not target.is_file():
+            raise InputError(f"评分包文件缺失或越界：{relative}")
+        if file_sha256(target) != expected:
+            raise InputError(f"评分包文件已变化：{relative}")
+        checked += 1
+    return {"valid": True, "packet_verified": True, "checked_files": checked,
+            "rater_id": rater, "packet_root": str(root)}
+
+
 def read_csv(path, fields, snapshot=None):
     """Reject hidden fields and structurally damaged CSV before processing rows."""
     if snapshot is None:
@@ -180,14 +230,14 @@ def prepare(manifest, out, raters, seed, expected_clips, phase):
             "failure_reason": FAILURE_LABELS.get(row["status"], ""),
         }
     metadata = {
-        "tool_version": 1,
+        "tool_version": 2,
         "python_version": sys.version.split()[0],
         "phase": phase,
         "seed": seed,
         "expected_clips": expected_clips,
         "manifest_sha256": hashlib.sha256(manifest_snapshot).hexdigest(),
         "raters": raters,
-        "orders_sha256": {},
+        "immutable_files_sha256": {},
     }
     for rater in raters:
         directory = out / "raters" / rater
@@ -201,8 +251,12 @@ def prepare(manifest, out, raters, seed, expected_clips, phase):
                     **dict.fromkeys(SCORES, ""), "comment": public[clip]["failure_reason"]}
                    for clip in order])
         (directory / "评分说明.txt").write_text(INSTRUCTIONS, encoding="utf-8")
-        metadata["orders_sha256"][rater] = hashlib.sha256(
-            (directory / "order.csv").read_bytes()).hexdigest()
+    immutable = list(assets.iterdir())
+    immutable.extend(out / "raters" / rater / filename for rater in raters
+                     for filename in ("order.csv", "评分说明.txt"))
+    metadata["immutable_files_sha256"] = {
+        path.relative_to(out).as_posix(): file_sha256(path) for path in sorted(immutable)
+    }
     (out / "preparation.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return metadata
@@ -278,7 +332,13 @@ def main(argv=None):
     check.add_argument("--ratings", nargs=4, required=True, metavar="RATER=FILE")
     check.add_argument("--preparation", type=Path, required=True,
                        help="prepare 生成的 preparation.json，防止换用另一批清单")
+    check.add_argument("--packet-root", type=Path,
+                       help="完整评分包根目录；默认 preparation.json 所在目录")
     check.add_argument("--report", type=Path)
+    packet = commands.add_parser("verify-packet", help="交接时核对实际收到的素材、顺序和说明")
+    packet.add_argument("--preparation", type=Path, required=True, help="由准备方保留的可信 v2 记录")
+    packet.add_argument("--packet-root", type=Path, required=True)
+    packet.add_argument("--rater", help="只核对指定评审的目录和所有共享素材")
     args = parser.parse_args(argv)
     try:
         if args.command == "prepare":
@@ -286,21 +346,25 @@ def main(argv=None):
                              args.expected_clips, args.phase)
             print(json.dumps({"output": str(args.out), **result}, ensure_ascii=False, indent=2))
             return 0
+        frozen = json.loads(args.preparation.read_text(encoding="utf-8"))
+        packet_result = verify_packet(frozen, args.packet_root or args.preparation.parent,
+                                      args.rater if args.command == "verify-packet" else None)
+        if args.command == "verify-packet":
+            print(json.dumps(packet_result, ensure_ascii=False, indent=2))
+            return 0
         submissions = {}
         for entry in args.ratings:
             rater, sep, filename = entry.partition("=")
             if not sep or not filename or rater in submissions:
                 raise InputError("--ratings 使用四个不同的 RATER=FILE")
             submissions[rater] = filename
-        frozen = json.loads(args.preparation.read_text(encoding="utf-8"))
-        if not isinstance(frozen, dict) or frozen.get("tool_version") != 1:
-            raise InputError("preparation.json 不是工具生成的有效准备记录")
         manifest_snapshot = args.manifest.read_bytes()
         if frozen.get("manifest_sha256") != hashlib.sha256(manifest_snapshot).hexdigest():
             raise InputError("匿名清单与准备评分表时的文件不同；不要在正式评审中更换批次")
         if frozen.get("raters") != args.raters:
             raise InputError("rater_id 与 preparation.json 不一致")
         result = validate_submissions(args.manifest, submissions, args.raters, manifest_snapshot)
+        result["packet_verified"] = True
         if frozen.get("expected_clips") != result["expected_clips_per_rater"]:
             raise InputError("preparation.json 中的预期视频数与清单不一致")
         content = json.dumps(result, ensure_ascii=False, indent=2) + "\n"

@@ -26,14 +26,18 @@ class ProtocolTests(unittest.TestCase):
                 writer.writerow({"case_id": f"case_{i}", "category": f"category_{i % 6}", alias: "image.png",
                                  "prompt": prompt, "seed": 100 + i})
 
-    def run_fixture(self, *, phase="smoke", failed=(), interrupted=(), mutate_during_asset_check=None):
+    def run_fixture(self, *, phase="smoke", failed=(), interrupted=(),
+                    per_category=2, mutate_during_asset_check=None, before_worker=None):
         args = ["--cases", str(self.csv), "--phase", phase, "--upstream", str(self.root / "source"),
-                "--assets", str(self.root / "weights"), "--output", str(self.root / "result")]
+                "--assets", str(self.root / "weights"), "--output", str(self.root / "result"),
+                "--per-category", str(per_category)]
         calls = []
 
         def fake_worker(command, **kwargs):
             request = Path(command[-1])
             payload = json.loads(request.read_text())
+            if before_worker:
+                before_worker(payload)
             calls.append(payload)
             result = dict(payload["record"])
             if result["case_id"] in interrupted:
@@ -122,6 +126,53 @@ class ProtocolTests(unittest.TestCase):
         with (self.root / "result/runs.csv").open() as stream:
             rows = list(csv.DictReader(stream))
         self.assertEqual(rows[1]["status"], "incomplete")
+
+    def test_interruption_exports_every_selected_case_without_starting_pending_ones(self):
+        self.manifest(3)
+        status, calls = self.run_fixture(phase="pilot", interrupted={"case_1"})
+        self.assertEqual((status, len(calls)), (1, 2))
+        output = self.root / "result"
+        with (output / "runs.csv").open() as stream:
+            rows = list(csv.DictReader(stream))
+        self.assertEqual([row["case_id"] for row in rows], ["case_0", "case_1", "case_2"])
+        self.assertEqual([row["status"] for row in rows], ["success", "incomplete", "not_started"])
+        self.assertEqual(rows[2]["seed"], "102")
+        self.assertEqual(rows[2]["elapsed_seconds"], "")
+        self.assertEqual(rows[2]["gpu_model"], "")
+        self.assertFalse((output / "cases/case_2").exists())
+
+    def test_full_denominator_is_exported_before_first_worker(self):
+        self.manifest(3)
+        snapshots = []
+
+        def inspect_export(_payload):
+            with (self.root / "result/runs.csv").open() as stream:
+                snapshots.append(list(csv.DictReader(stream)))
+
+        self.run_fixture(phase="pilot", before_worker=inspect_export)
+        self.assertEqual(len(snapshots[0]), 3)
+        self.assertEqual([row["status"] for row in snapshots[0]],
+                         ["incomplete", "not_started", "not_started"])
+
+    def test_expansion_keeps_attempts_and_cannot_shrink_handoff(self):
+        self.manifest(24)
+        status, first = self.run_fixture(phase="formal")
+        self.assertEqual((status, len(first)), (0, 12))
+        output = self.root / "result"
+        selection = json.loads((output / "selection.json").read_text())
+        self.assertEqual(len(selection["case_ids"]), 12)
+        status, new = self.run_fixture(phase="formal", per_category=4, interrupted={"case_13"})
+        self.assertEqual((status, len(new)), (1, 2))
+        rows = run_cases.records(output)
+        self.assertEqual(len(rows), 24)
+        self.assertEqual(sum(row["status"] == "not_started" for row in rows), 10)
+        before = (output / "runs.csv").read_bytes()
+        with self.assertRaisesRegex(ValueError, "Cannot shrink"):
+            self.run_fixture(phase="formal", per_category=2)
+        self.assertEqual((output / "runs.csv").read_bytes(), before)
+        status, resumed = self.run_fixture(phase="formal", per_category=4)
+        self.assertEqual((status, len(resumed)), (1, 10))
+        self.assertEqual(len(run_cases.records(output)), 24)
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ AI6132 Project 1 · Technical Review
 ## C 的运行入口
 
 - [TC2 资源检查与基础环境](02-pilot/tc2/README.md)
+- [CPU 清单检查、人评工具与测试入口](02-pilot/tc2/run_cpu.sh)
 - [LTX-Video 2B 两阶段生成](03-generation/ltx_video/README.md)
 - [人工盲评准备与收表检查](05-human-evaluation/README.md)
 

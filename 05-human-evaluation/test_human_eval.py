@@ -4,6 +4,7 @@ import contextlib
 import io
 import hashlib
 import json
+import shutil
 import tempfile
 import unittest
 from unittest import mock
@@ -213,6 +214,73 @@ class HumanEvaluationTests(unittest.TestCase):
         orders = h.read_csv(out / "raters/A/order.csv", h.ORDER_FIELDS)
         self.assertEqual(next(row["prompt"] for row in orders if row["clip_id"] == "clip_0001"),
                          "A person walks, then turns.")
+
+    def test_cli_rejects_changes_to_each_distributed_immutable_file(self):
+        out = self.prepare()
+        files = self.submissions(out)
+        self.fill_synthetic_test_scores(files)
+        args = ["validate", "--manifest", str(self.manifest),
+                "--preparation", str(out / "preparation.json"), "--ratings"]
+        args += [f"{rater}={path}" for rater, path in files.items()]
+        changes = {
+            "assets/clip_0001.mp4": b"another video",
+            "assets/clip_0001_reference.png": b"another first image",
+            "raters/A/order.csv": b"another order and prompt",
+            "raters/A/评分说明.txt": b"another rubric",
+        }
+        for relative, replacement in changes.items():
+            with self.subTest(relative=relative):
+                path = out / relative
+                original = path.read_bytes()
+                path.write_bytes(replacement)
+                with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                    self.assertEqual(h.main(args), 2)
+                self.assertIn(relative, stderr.getvalue())
+                path.write_bytes(original)
+        # Editable rating files remain valid after filling scores.
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            self.assertEqual(h.main(args), 0)
+        self.assertTrue(json.loads(stdout.getvalue())["packet_verified"])
+
+    def test_verify_received_copy_with_only_one_raters_directory(self):
+        out = self.prepare()
+        received = self.root / "received"
+        shutil.copytree(out / "assets", received / "assets")
+        shutil.copytree(out / "raters/A", received / "raters/A")
+        args = ["verify-packet", "--preparation", str(out / "preparation.json"),
+                "--packet-root", str(received), "--rater", "A"]
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            self.assertEqual(h.main(args), 0)
+        self.assertTrue(json.loads(stdout.getvalue())["packet_verified"])
+        (received / "assets/clip_0001.mp4").unlink()
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            self.assertEqual(h.main(args), 2)
+        self.assertIn("clip_0001.mp4", stderr.getvalue())
+
+    def test_validate_relocated_full_packet_with_trusted_receipt(self):
+        out = self.prepare()
+        relocated = self.root / "relocated"
+        shutil.copytree(out, relocated)
+        files = self.submissions(relocated)
+        self.fill_synthetic_test_scores(files)
+        args = ["validate", "--manifest", str(self.manifest),
+                "--preparation", str(out / "preparation.json"),
+                "--packet-root", str(relocated), "--ratings"]
+        args += [f"{rater}={path}" for rater, path in files.items()]
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(h.main(args), 0)
+
+    def test_old_preparation_cannot_silently_bypass_media_verification(self):
+        out = self.prepare()
+        receipt = out / "preparation.json"
+        metadata = json.loads(receipt.read_text())
+        metadata["tool_version"] = 1
+        metadata.pop("immutable_files_sha256")
+        receipt.write_text(json.dumps(metadata))
+        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            self.assertEqual(h.main(["verify-packet", "--preparation", str(receipt),
+                                     "--packet-root", str(out)]), 2)
+        self.assertIn("v2", stderr.getvalue())
 
 
 if __name__ == "__main__":
