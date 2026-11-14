@@ -33,6 +33,10 @@ sbatch --partition=MGPU-TC2 --qos=normal /path/to/install_ltx.sh
 
 ## 完整流程检查与后续批次
 
+C 已在 PR #2 报告完成cu126环境下的24条正式视频，原始报告及独立复核边界见 [C 正式批次报告](C_FORMAL_REPORT.md)。旧cu121环境在513帧VAE解码失败，当前 `run_ltx.sh` 默认激活 `AI6132_LTX_ENV=${AI6132_ROOT}/env-cu126`；可显式选择其他已验证环境。
+
+在基础环境和LTX安装成功后，查询配额并提交 `sbatch 02-pilot/tc2/bootstrap_cu126.sh` 创建独立cu126环境。脚本默认MGPU-TC2/normal、1节点、8CPU、28G、1GPU、1小时，无节点绑定；安装前检查Home用量、克隆体积和12GB升级缓存预留。已有环境时不重复安装，也不在其中重跑旧constraints。Conda hook与activate均保护nounset，启用cuDNN v8 API路径。正式生成仍保持原权重、BF16与官方两阶段配置。
+
 从仓库根目录提交 CPU 作业，建立合成环境检查输入（个人环境中需有 Pillow）：
 
 ```bash
@@ -82,7 +86,7 @@ sbatch 02-pilot/tc2/run_cpu.sh test
 
 人评参数示例见 [人评说明](../../05-human-evaluation/README.md)。日志写入提交目录的 `ai6132_cpu_<jobid>.out` 和 `.err`。这些 CPU 任务无需 checkpoint、训练恢复、signal 或后继作业；测试中出现的模拟中断日志不代表真实推理失败。
 
-新增CPU子命令：dataset（适配/验证原始清单）、assets（已下载资产的revision/SHA256凭据）、media（完整时长匿名交接）、vbench-cache（缓存凭据）。详见各阶段README。test也覆盖共享工具回归；完整CPU套件除Pillow外需要可用FFmpeg/ffprobe。
+新增CPU子命令：dataset（适配/验证原始清单）、assets（已下载资产的revision/SHA256凭据）、media（完整时长匿名交接）、vbench-cache（缓存凭据）、import-ltx（完整解码接收C的已完成24条并派生规范清单）。详见各阶段README。test也覆盖共享工具回归；完整CPU套件除Pillow外需要可用FFmpeg/ffprobe。
 
 B的生成与评估统一通过 `run_b_gpu.sh hunyuan|vbench|qwen`，显式设置个人 `AI6132_GPU_ENV`。默认MGPU-TC2/normal、1node、4CPU、28G、1GPU、2小时，无节点绑定；提交前重新查询资源与配额。stdout/stderr为提交目录的ai6132_b_JOBID.out/.err。Hunyuan、VBench、Qwen按单GPU配额串行；CPU任务只有在总CPU/内存配额允许时并行。这里是推理批处理，不使用训练checkpoint或无限自动重提；逐案例/请求日志支持继续未启动项。
 

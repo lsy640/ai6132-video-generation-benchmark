@@ -192,7 +192,8 @@ class ProtocolTests(unittest.TestCase):
 
     def test_removed_cli_flags_are_rejected(self):
         base = ['--cases', str(self.csv), '--phase', 'formal']
-        for flags in (['--per-category', '4'], ['--selection-mode', 'manifest'], ['--num-frames', '121']):
+        for flags in (['--per-category', '4'], ['--selection-mode', 'manifest'],
+                      ['--num-frames', '121'], ['--protocol', 'legacy'], ['--protocol', 'shared24']):
             with self.subTest(flags=flags), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
                 run_cases.parser().parse_args(base + flags)
             self.assertEqual(caught.exception.code, 2)

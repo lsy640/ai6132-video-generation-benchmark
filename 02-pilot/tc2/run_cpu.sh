@@ -21,7 +21,7 @@ fi
 AI6132_TASK="$1"
 shift
 case "$AI6132_TASK" in
-  human-eval|make-smoke|validate-cases|dataset|media|vbench-cache|assets) ;;
+  human-eval|make-smoke|validate-cases|import-ltx|dataset|media|vbench-cache|assets) ;;
   test) [[ $# -eq 0 ]] || { printf 'test takes no arguments\n' >&2; exit 2; } ;;
   *) printf 'Unknown CPU task: %s\n' "$AI6132_TASK" >&2; exit 2 ;;
 esac
@@ -50,6 +50,7 @@ case "$AI6132_TASK" in
   human-eval) python 05-human-evaluation/human_eval.py "$@" ;;
   make-smoke) python 02-pilot/tc2/make_smoke_case.py "$@" ;;
   validate-cases) python 03-generation/ltx_video/run_cases.py "$@" --validate-only ;;
+  import-ltx) python 03-generation/ltx_video/import_completed.py "$@" ;;
   dataset) python -m ai6132_benchmark.dataset "$@" ;;
   assets) python -m ai6132_benchmark.assets "$@" ;;
   media) python -m ai6132_benchmark.media "$@" ;;

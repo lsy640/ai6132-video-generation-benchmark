@@ -29,7 +29,7 @@ CSV_FIELDS = [
     "native_fps", "native_duration_seconds", "native_codec", "elapsed_seconds",
     "worker_wall_seconds", "peak_vram_allocated_mib", "peak_vram_reserved_mib",
     "gpu_model", "gpu_uuid", "gpu_total_memory_mib", "cuda_visible_devices",
-    "driver_version", "torch_version", "torch_cuda_version", "python_version",
+    "driver_version", "torch_version", "torch_cuda_version", "cudnn_version", "python_version",
     "offload_requested", "offload_effective", "started_at", "finished_at", "log_path",
     "target_frames", "source_frame_num",
 ]
@@ -102,6 +102,7 @@ def worker(payload_path: Path) -> int:
             "gpu_total_memory_mib": props.total_memory / 1024**2,
             "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", ""),
             "torch_version": torch.__version__, "torch_cuda_version": torch.version.cuda,
+            "cudnn_version": torch.backends.cudnn.version(),
             "python_version": platform.python_version(),
             "offload_effective": settings["offload_to_cpu"] and props.total_memory / 1024**3 < 30,
         })

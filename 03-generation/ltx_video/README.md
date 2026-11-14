@@ -2,7 +2,7 @@
 
 使用官方两阶段 I2V，首图条件为第 0 帧，关闭提示词扩写。
 
-2026-11-14 已在 TC2 L40S 上完成一条合成环境测试：`768×432 / 121 帧 / 24 fps`，H.264 原片完整解码通过，时长约 5.04 秒。该记录仅为历史实测；当前129/513帧规范仍须用3个独立共同样本验证。详见 [验证记录](../../02-pilot/tc2/VALIDATION.md)。
+2026-11-14，C 在 PR #2 报告完成正式24条：18条129帧、6条513帧，均为768×432 / 24 fps，作业54359。运行时解码和本地哈希验收结果、计时、显存及失败历史见 [C 原始报告](../../02-pilot/tc2/C_FORMAL_REPORT.md)。这些实验数字由 C 提供，B 待收到原始交接包后独立复核；人工盲评尚未完成。
 
 ## 环境与权重
 
@@ -17,7 +17,15 @@ sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/bootstrap_env.sh
 sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/install_ltx.sh
 ```
 
-`prepare_environment.sh` 固定官方 commit `50f0aef1297574a4b29acbdb874e3a363a6d5f2e`，安装 torch 2.5.1 / torchvision 0.20.1 的 cu121 构建。`constraints.txt` 中的依赖组合已在 Python 3.10.22、L40S / 驱动 570.148.08 环境通过依赖、导入、CUDA/BF16 和生成检查。每批输出同时保存实际安装版本。
+`prepare_environment.sh` 固定官方 commit `50f0aef1297574a4b29acbdb874e3a363a6d5f2e`，建立 torch 2.5.1 / torchvision 0.20.1 的 cu121 基础环境。该旧环境在513帧VAE解码失败；长短正式生成使用独立的 `env-cu126`（torch2.6.0+cu126、torchvision0.21.0、cuDNN9.5.1）。基础环境安装完成后，通过 `bootstrap_cu126.sh` 克隆升级；安装会检查100GB Home预算，须在GPU批处理作业执行。已有cu126环境时直接复用。不要在新环境重跑旧 constraints 安装。每批输出冻结完整实际版本，并逐案例记录cuDNN版本。
+
+```bash
+mytcinfo
+sbatch 02-pilot/tc2/bootstrap_cu126.sh
+# 确认安装作业成功后；run_ltx.sh 也默认选择这个环境。
+export AI6132_LTX_ENV="$AI6132_ROOT/env-cu126"
+export AI6132_CPU_ENV="$AI6132_LTX_ENV"
+```
 
 下载固定 Hugging Face revision，并保存每个文件的 SHA256：
 
@@ -66,13 +74,29 @@ sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/run_ltx.sh \
   formal "$AI6132_CODE/01-dataset/cases.canonical.csv" "$AI6132_ROOT/outputs/ltx-formal-mixed"
 ```
 
-同一命令再次运行时，只继续尚未启动的case；成功、失败或中断均保留，不自动重抽。新混合协议使用独立目录，不修改旧批次冻结配置。513帧尚需共同GPU试跑验收，合法帧数不代表已验证资源可行；不得因失败静默改成续写或降低长度。
+同一命令再次运行时，只继续尚未启动的case；成功、失败或中断均保留，不自动重抽。新批次使用独立目录，不修改旧批次冻结配置。C 已报告cu126环境下513帧成功，具体证据范围见原始报告；不得因失败静默改成续写或降低长度。
 
 `selection.json` 冻结协议、阶段、规范清单哈希及全部案例顺序，必须与 `batch.json` 中的完整清单一致。`runs.csv` 从首个worker前覆盖所有案例，未启动为not_started、无实测GPU/耗时，中断尝试为incomplete；不为未启动项创建目录。B必须核对全部行和状态。
 
 代码哈希也在 `batch.json` 中冻结。升级 runner 后不能修改旧记录来绕过校验；保留旧输出，使用原代码续跑，或经小组确认后为新代码建立独立批次。读取记录也必须提供匹配的 `selection.json`。
 
-试跑可调整width/height/frame-rate，正式运行时冻结；生成帧数始终取自每案例target_frames。官方只在GPU总显存小于30GiB时启用CPU offload；48GB L40S记录requested=true、effective=false，长片可行性需实测。
+试跑可调整width/height/frame-rate，正式运行时冻结；生成帧数始终取自每案例target_frames。官方只在GPU总显存小于30GiB时启用CPU offload；48GB L40S记录requested=true、effective=false。
+
+## 已完成 C 批次的交接
+
+PR #2 原始批次使用01至24编号，不能直接交给B的规范清单入口。保留完整交接目录（batch.json、selection.json、pipeline.json、runs.csv及cases下的request/result/native），只在自己的授权目录接收，不访问C的Home。提交一次性CPU验收：
+
+```bash
+export AI6132_CODE="$PWD"
+export AI6132_CPU_ENV=/absolute/personal/environment
+mytcinfo
+sbatch 02-pilot/tc2/run_cpu.sh import-ltx \
+  --cases 01-dataset/cases.canonical.csv \
+  --bundle /absolute/received/formal-cu126-20261114 \
+  --output /absolute/new/ltx-canonical-intake
+```
+
+该工具只接受历史Shared24完整24条成功交付；逐条核对冻结prompt、seed、图片哈希、帧数、请求/结果/CSV和视频哈希，并用FFmpeg完整解码。生成独立runs.csv，将01映射为case_0001等，并记录来源文件哈希、编号映射及解码结果。原记录和视频不修改、不重新生成，不从记录里的原始绝对路径读取文件。新runs.csv可交给B的media入口。环境须有Pillow及FFmpeg/ffprobe；不完整、失败或不匹配的交付会拒绝验收，不写成24条成功。
 
 ## 输出与计时口径
 
