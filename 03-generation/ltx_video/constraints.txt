@@ -1,0 +1,8 @@
+# Candidate Linux/Python 3.10 stack; the actual environment must pass a GPU smoke
+# test before being frozen. This is not an upstream-provided tested lockfile.
+torch==2.5.1
+torchvision==0.20.1
+diffusers==0.33.1
+transformers==4.51.3
+huggingface-hub==0.30.2
+accelerate==1.6.0

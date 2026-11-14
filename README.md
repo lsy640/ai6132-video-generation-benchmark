@@ -19,4 +19,10 @@ AI6132 Project 1 · Technical Review
 | [`07-analysis/`](07-analysis/) | 一致性计算、结果合并和图表 |
 | [`08-report/`](08-report/) | 技术报告与组员贡献说明 |
 
-初始目录使用 `.gitkeep` 占位。
+## C 的运行入口
+
+- [TC2 资源检查与基础环境](02-pilot/tc2/README.md)
+- [LTX-Video 2B 两阶段生成](03-generation/ltx_video/README.md)
+- [人工盲评准备与收表检查](05-human-evaluation/README.md)
+
+正式运行须使用 A 冻结的共享输入，人工评分须由四位成员独立完成。权重、原始视频、未解盲的评分和映射表不存放在本公开仓库。
