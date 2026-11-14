@@ -1,0 +1,5 @@
+# Official Hunyuan requirements at 60783e704160023913bee78f0b47036d393d4dfa.
+# Match torchaudio==2.6.0 and install the matching CUDA 12.4 PyTorch wheels.
+torch==2.6.0
+torchvision==0.21.0
+torchaudio==2.6.0

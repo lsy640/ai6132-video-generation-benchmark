@@ -22,8 +22,7 @@ from common import (MODEL_ID, MODEL_REVISION, TEXT_REVISION, UPSTREAM_COMMIT,
 HERE = Path(__file__).resolve().parent
 CONFIG_FILE = HERE / "ltxv-2b-0.9.8-no-enhance.json"
 CSV_FIELDS = [
-    "case_id", "category", "model_id", "phase", "protocol", "seed", "status", "failure_reason",
-    "target_frame_num", "requested_frame_num",
+    "case_id", "category", "model_id", "phase", "seed", "status", "failure_reason",
     "weight_version", "weight_revision", "text_encoder_revision", "upstream_commit",
     "config", "config_sha256", "case_fingerprint", "image_sha256",
     "native_video", "video_sha256", "native_width", "native_height", "native_frames",
@@ -32,6 +31,7 @@ CSV_FIELDS = [
     "gpu_model", "gpu_uuid", "gpu_total_memory_mib", "cuda_visible_devices",
     "driver_version", "torch_version", "torch_cuda_version", "cudnn_version", "python_version",
     "offload_requested", "offload_effective", "started_at", "finished_at", "log_path",
+    "target_frames", "source_frame_num",
 ]
 
 
@@ -138,7 +138,7 @@ def worker(payload_path: Path) -> int:
         result.update(inspect_video(video))
         actual = (result["native_width"], result["native_height"], result["native_frames"], result["native_fps"])
         expected = (settings["width"], settings["height"], settings["num_frames"], settings["frame_rate"])
-        if actual != expected or result["native_duration_seconds"] < 5:
+        if actual != expected:
             raise ValueError(f"Native output specification mismatch: expected {expected}, got {actual}")
         result["status"], result["failure_reason"] = "success", ""
     except BaseException as exc:
@@ -163,10 +163,7 @@ def worker(payload_path: Path) -> int:
 def unstarted_record(case: dict, frozen: dict, output: Path) -> dict:
     config_path = output / "pipeline.json"
     return {"case_id": case["case_id"], "category": case["category"], "model_id": MODEL_ID,
-            "phase": frozen["phase"], "protocol": frozen.get("protocol", "legacy"),
-            "seed": case["seed"], "status": "not_started",
-            "target_frame_num": case.get("target_frame_num", frozen["settings"]["num_frames"]),
-            "requested_frame_num": case.get("requested_frame_num", frozen["settings"]["num_frames"]),
+            "phase": frozen["phase"], "seed": case["seed"], "status": "not_started",
             "failure_reason": "Not started in the selected batch",
             "weight_version": MODEL_ID, "weight_revision": MODEL_REVISION,
             "text_encoder_revision": TEXT_REVISION, "upstream_commit": UPSTREAM_COMMIT,
@@ -174,6 +171,8 @@ def unstarted_record(case: dict, frozen: dict, output: Path) -> dict:
             "case_fingerprint": object_digest({"case": case, "frozen": frozen}),
             "image_sha256": case["image_sha256"],
             "offload_requested": frozen["settings"]["offload_to_cpu"],
+            "target_frames": case['target_frames'],
+            "source_frame_num": case['source_frame_num'],
             "log_path": str(output / "cases" / case["case_id"] / "inference.log")}
 
 
@@ -188,16 +187,23 @@ def records(output: Path) -> list[dict]:
             row.update(status="incomplete", failure_reason="No terminal result: process may still run or was interrupted; never automatically rerun")
             result.append(row)
     selection_path = output / "selection.json"
-    if not selection_path.exists():
-        return result  # Read older attempt logs without inventing their batch size.
-    selected = json.loads(selection_path.read_text(encoding="utf-8"))["case_ids"]
+    selection = json.loads(selection_path.read_text(encoding="utf-8"))
     frozen = json.loads((output / "batch.json").read_text(encoding="utf-8"))
+    selected = selection['case_ids']
+    if selection != selection_receipt(frozen):
+        raise ValueError('Selection receipt must match the complete canonical batch')
     cases = {case["case_id"]: case for case in frozen["cases"]}
     attempts = {row["case_id"]: row for row in result}
     if set(attempts) - set(selected):
         raise ValueError("Attempted cases are outside selection.json; refusing an incomplete handoff")
     return [attempts[case_id] if case_id in attempts else unstarted_record(cases[case_id], frozen, output)
             for case_id in selected]
+
+
+def selection_receipt(frozen: dict) -> dict:
+    return {'schema_version': 2, 'protocol': 'a-mixed-24-v1', 'phase': frozen['phase'],
+            'cases_csv_sha256': frozen['cases_csv_sha256'],
+            'case_ids': [case['case_id'] for case in frozen['cases']]}
 
 
 def export_csv(output: Path):
@@ -212,21 +218,15 @@ def export_csv(output: Path):
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--cases", type=Path, required=True)
-    p.add_argument("--protocol", choices=["legacy", "shared24"], default="legacy",
-                   help="legacy: original six-category plan; shared24: A's unchanged 24-row CSV with per-case frame_num")
     p.add_argument("--image-root", type=Path, help="Default: cases.csv directory; never modifies shared images")
     p.add_argument("--phase", required=True, choices=["smoke", "pilot", "formal"],
-                   help="smoke: one non-evaluation environment check; pilot: 3 shared calibration cases; formal: 12/24 cases")
-    p.add_argument("--per-category", type=int, choices=[2, 4], default=2,
-                   help="Formal only: first 2 or 4 in each of 6 categories, preserving CSV order")
+                   help="smoke: 1 canonical diagnostic; pilot: 3 independent short/long cases; formal: all 24 A cases")
     p.add_argument("--validate-only", action="store_true", help="Validate manifest and files without GPU, weights or output writes")
     p.add_argument("--upstream", type=Path)
     p.add_argument("--assets", type=Path)
     p.add_argument("--output", type=Path)
     p.add_argument("--width", type=int, default=768)
     p.add_argument("--height", type=int, default=432)
-    p.add_argument("--num-frames", type=int, default=None,
-                   help="legacy only (default 121); shared24 takes frame counts exclusively from CSV")
     p.add_argument("--frame-rate", type=int, default=24)
     p.add_argument("--offload-to-cpu", action="store_true", help="Official implementation activates this only below 30 GiB total GPU memory")
     return p
@@ -234,24 +234,15 @@ def parser():
 
 def main(argv=None):
     args = parser().parse_args(argv)
-    if args.protocol == "shared24" and args.num_frames is not None:
-        raise ValueError("--num-frames conflicts with --protocol shared24; use the unchanged CSV frame_num")
-    num_frames = (121 if args.num_frames is None else args.num_frames) if args.protocol == "legacy" else None
-    settings = {"width": args.width, "height": args.height, "num_frames": num_frames,
+    settings = {"width": args.width, "height": args.height,
                 "frame_rate": args.frame_rate, "offload_to_cpu": args.offload_to_cpu}
-    if min(args.width, args.height, args.frame_rate) <= 0 or (num_frames is not None and num_frames <= 0):
-        raise ValueError("All native dimensions, frame count and fps must be positive")
-    if args.width * 9 != args.height * 16 or (num_frames is not None and
-            ((num_frames - 1) % 8 or num_frames / args.frame_rate < 5)):
-        raise ValueError("Use landscape 16:9, 8*n+1 frames and at least 5 seconds; do not silently lower the trial specification")
-    if args.protocol == "shared24" and (args.width, args.height, args.frame_rate) != (768, 432, 24):
-        raise ValueError("shared24 keeps the agreed 768x432 / 24 fps configuration")
+    if min(args.width, args.height, args.frame_rate) <= 0 or args.width * 9 != args.height * 16:
+        raise ValueError('Use positive dimensions/fps and landscape 16:9')
     cases_path = args.cases.expanduser().resolve()
-    all_cases, cases_csv_sha256 = read_manifest_snapshot(cases_path, args.image_root, protocol=args.protocol)
-    chosen = select_cases(all_cases, args.phase, args.per_category, protocol=args.protocol)
-    print(json.dumps({"phase": args.phase, "protocol": args.protocol, "selected": len(chosen), "settings": settings,
-                      "case_ids": [row["case_id"] for row in chosen],
-                      "requested_frame_nums": [row.get("requested_frame_num", num_frames) for row in chosen]}, ensure_ascii=False))
+    all_cases, cases_csv_sha256 = read_manifest_snapshot(cases_path, args.image_root)
+    chosen = select_cases(all_cases, args.phase)
+    print(json.dumps({"phase": args.phase, "selected": len(chosen), "settings": settings,
+                      "case_ids": [row["case_id"] for row in chosen]}, ensure_ascii=False))
     if args.validate_only:
         print("Manifest validation passed; no model inference or output generation performed.")
         return 0
@@ -265,11 +256,12 @@ def main(argv=None):
     pipeline["spatial_upscaler_model_path"] = str(assets / "ltx" / WEIGHT_FILES[1])
     pipeline["text_encoder_model_name_or_path"] = str(assets / "text")
     dependency_freeze = subprocess.check_output([sys.executable, "-m", "pip", "freeze"], text=True)
-    frozen = {"schema_version": 1, "phase": args.phase, "protocol": args.protocol, "model_id": MODEL_ID,
+    frozen = {"schema_version": 2, "phase": args.phase, "model_id": MODEL_ID,
               "upstream_commit": UPSTREAM_COMMIT, "asset_manifest": asset_manifest,
               "cases_csv_sha256": cases_csv_sha256, "cases": all_cases,
               "dependency_freeze": dependency_freeze, "python_version": platform.python_version(),
               "runner_sha256": digest(Path(__file__).resolve()), "common_sha256": digest(HERE / "common.py"),
+              "dataset_contract_sha256": digest(HERE.parents[1] / 'ai6132_benchmark/dataset.py'),
               "settings": settings, "pipeline": pipeline}
     output.mkdir(parents=True, exist_ok=True)
     with (output / ".runner.lock").open("a") as lock:
@@ -294,23 +286,15 @@ def main(argv=None):
         write_json(config_path, pipeline)
         selection_path = output / "selection.json"
         selected_ids = {row["case_id"] for row in chosen}
+        selection = selection_receipt(frozen)
         if selection_path.exists():
             previous = json.loads(selection_path.read_text(encoding="utf-8"))
-            if (previous.get("schema_version") != 1 or previous.get("phase") != args.phase or
-                    previous.get("protocol", "legacy") != args.protocol or
-                    previous.get("cases_csv_sha256") != cases_csv_sha256):
-                raise ValueError("Selected batch receipt differs from the frozen manifest")
-            if not set(previous["case_ids"]) <= selected_ids:
-                raise ValueError("Cannot shrink the selected batch; retain the expanded handoff denominator")
+            if previous != selection:
+                raise ValueError('Selection receipt must match the complete canonical batch')
         existing_ids = {path.name for path in (output / "cases").glob("*") if path.is_dir()}
         if not existing_ids <= selected_ids:
             raise ValueError("Existing attempts are outside the selected batch; do not shrink or mix batches")
-        write_json(selection_path, {
-            "schema_version": 1, "phase": args.phase, "protocol": args.protocol,
-            "per_category": args.per_category if args.phase == "formal" and args.protocol == "legacy" else None,
-            "cases_csv_sha256": cases_csv_sha256,
-            "case_ids": [case["case_id"] for case in chosen],
-        })
+        write_json(selection_path, selection)
         # Publish the complete selected denominator before launching any worker.
         # No case directories are created for not_started rows, so resume can start them.
         export_csv(output)
@@ -336,8 +320,7 @@ def main(argv=None):
                 record = unstarted_record(case, frozen, output)
                 record.update(status="running", failure_reason="", started_at=utc_now())
                 case_settings = dict(settings)
-                if args.protocol == "shared24":
-                    case_settings["num_frames"] = case["requested_frame_num"]
+                case_settings['num_frames'] = case['target_frames']
                 payload = {"case": case, "settings": case_settings, "upstream": str(upstream),
                            "config": str(config_path), "record": record}
                 request = case_dir / "request.json"

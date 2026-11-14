@@ -1,5 +1,7 @@
 #!/bin/bash
 # Args: smoke|pilot|formal /absolute/cases.csv /absolute/output [runner options]
+#SBATCH --partition=MGPU-TC2
+#SBATCH --qos=normal
 #SBATCH --job-name=ai6132-c-ltx
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -21,16 +23,19 @@ AI6132_OUTPUT="$3"
 shift 3
 AI6132_ROOT="${AI6132_ROOT:-$HOME/ai6132-c}"
 AI6132_CODE="${AI6132_CODE:-$AI6132_ROOT/code}"
-AI6132_LTX_ENV="${AI6132_LTX_ENV:-$AI6132_ROOT/env}"
+AI6132_LTX_ENV="${AI6132_LTX_ENV:-$AI6132_ROOT/env-cu126}"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
 export MKL_NUM_THREADS="$OMP_NUM_THREADS"
 export OPENBLAS_NUM_THREADS="$OMP_NUM_THREADS"
 export HF_HOME="$AI6132_ROOT/hf-cache"
 export PYTHONUNBUFFERED=1
 export TOKENIZERS_PARALLELISM=false
+export TORCH_CUDNN_V8_API_DISABLED="${TORCH_CUDNN_V8_API_DISABLED:-0}"
 module load miniconda3/25.5.1
+set +u
 eval "$(conda shell.bash hook)"
 conda activate "$AI6132_LTX_ENV"
+set -u
 python "$AI6132_CODE/03-generation/ltx_video/run_cases.py" \
   --cases "$AI6132_CASES" --phase "$AI6132_PHASE" \
   --upstream "$AI6132_ROOT/LTX-Video" --assets "$AI6132_ROOT/ltx_assets" \

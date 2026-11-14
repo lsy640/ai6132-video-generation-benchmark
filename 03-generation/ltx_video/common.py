@@ -6,7 +6,11 @@ import hashlib
 import io
 import json
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from ai6132_benchmark.dataset import FIELDS, validate_profile
 
 UPSTREAM_COMMIT = "50f0aef1297574a4b29acbdb874e3a363a6d5f2e"
 MODEL_ID = "ltxv-2b-0.9.8-distilled"
@@ -28,7 +32,6 @@ TEXT_FILES = (
     "tokenizer/spiece.model",
     "tokenizer/tokenizer_config.json",
 )
-IMAGE_ALIASES = ("image_path", "image", "first_frame", "first_frame_path", "reference_image")
 
 
 def digest(path: Path) -> str:
@@ -50,16 +53,7 @@ def write_json(path: Path, data: object) -> None:
     temporary.replace(path)
 
 
-def nearest_ltx_frames(target: int) -> int:
-    """Nearest positive 8*n+1 frame count; a tie chooses the smaller value."""
-    if target < 1:
-        raise ValueError("Target frame count must be positive")
-    lower = ((target - 1) // 8) * 8 + 1
-    return min((lower, lower + 8), key=lambda value: (abs(value - target), value))
-
-
-def read_cases(csv_path: Path, image_root: Path | None = None, *, csv_bytes: bytes | None = None,
-               protocol: str = "legacy") -> list[dict]:
+def read_cases(csv_path: Path, image_root: Path | None = None, *, csv_bytes: bytes | None = None) -> list[dict]:
     """Preserve CSV order and prompt text; paths default to the CSV directory."""
     root = (image_root or csv_path.parent).resolve()
     snapshot = csv_path.read_bytes() if csv_bytes is None else csv_bytes
@@ -68,90 +62,60 @@ def read_cases(csv_path: Path, image_root: Path | None = None, *, csv_bytes: byt
         fields = reader.fieldnames or []
         if len(fields) != len(set(fields)):
             raise ValueError("Duplicate CSV column names")
-        if protocol not in ("legacy", "shared24"):
-            raise ValueError(f"Unknown protocol: {protocol}")
-        required = ({"image_type", "image_path", "prompt", "seed", "frame_num"} if protocol == "shared24"
-                    else {"case_id", "category", "prompt", "seed"})
-        missing = required - set(fields)
-        aliases = (["image_path"] if "image_path" in fields else []) if protocol == "shared24" else [key for key in IMAGE_ALIASES if key in fields]
-        if missing or not aliases:
-            raise ValueError(f"Required {protocol} fields: {sorted(required)} plus an image path; missing={sorted(missing)}, image columns={aliases}")
+        if fields != FIELDS:
+            raise ValueError(f"Canonical manifest requires fields in order: {','.join(FIELDS)}")
         rows, seen = [], set()
         for number, row in enumerate(reader, 2):
             if None in row or any(row.get(key) is None for key in fields):
                 raise ValueError(f"Malformed CSV row {number}")
-            if protocol == "shared24":
-                match = re.match(r"^(0[1-9]|1[0-9]|2[0-4])_", Path(row["image_path"].strip()).name)
-                if not match:
-                    raise ValueError(f"shared24 image filename must start with 01_ through 24_ at row {number}")
-                case_id = match.group(1)
-            else:
-                case_id = row["case_id"].strip()
-            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,99}", case_id) or case_id in seen:
+            case_id = row["case_id"].strip()
+            if not re.fullmatch(r"case_[0-9]{4}", case_id) or case_id in seen:
                 raise ValueError(f"Invalid or duplicate case_id at row {number}: {case_id!r}")
             seen.add(case_id)
-            category, prompt = (row["image_type"] if protocol == "shared24" else row["category"].strip()), row["prompt"]
-            if not category.strip() or not prompt.strip():
+            category, prompt = row["category"].strip(), row["prompt"]
+            if not category or not prompt.strip():
                 raise ValueError(f"Empty category/prompt for {case_id}")
             raw_seed = row["seed"].strip()
             if not raw_seed.isascii() or not raw_seed.isdecimal() or not 0 <= int(raw_seed) < 2**32:
                 raise ValueError(f"seed for {case_id} must be an explicit integer in [0, 2**32)")
-            values = [row[key].strip() for key in aliases if row[key].strip()]
-            if not values or len(set(values)) != 1:
-                raise ValueError(f"Missing or conflicting image path aliases for {case_id}")
-            path = Path(values[0]).expanduser()
+            if not row['image_path'].strip():
+                raise ValueError(f'Missing image_path for {case_id}')
+            path = Path(row['image_path']).expanduser()
             path = (path if path.is_absolute() else root / path).resolve()
             if not path.is_file():
                 raise ValueError(f"Missing shared first image for {case_id}: {path}")
-            case = {"case_id": case_id, "category": category, "image_path": str(path),
+            item = {"case_id": case_id, "category": category, "image_path": str(path),
                     "image_sha256": digest(path), "prompt": prompt, "seed": int(raw_seed)}
-            if protocol == "shared24":
-                raw_frames = row["frame_num"].strip()
-                if raw_frames not in ("128", "512"):
-                    raise ValueError(f"shared24 frame_num for {case_id} must be 128 or 512")
-                case["target_frame_num"] = int(raw_frames)
-                case["requested_frame_num"] = nearest_ltx_frames(int(raw_frames))
-            rows.append(case)
+            item.update(target_frames=int(row['target_frames']), source_frame_num=int(row['source_frame_num']))
+            validate_profile([item], formal=False)
+            rows.append(item)
     if not rows:
         raise ValueError("cases.csv is empty")
     return rows
 
 
-def read_manifest_snapshot(csv_path: Path, image_root: Path | None = None, *,
-                           protocol: str = "legacy") -> tuple[list[dict], str]:
+def read_manifest_snapshot(csv_path: Path, image_root: Path | None = None) -> tuple[list[dict], str]:
     """Parse and hash the same bytes, even if the shared CSV changes afterwards."""
     snapshot = csv_path.read_bytes()
-    return read_cases(csv_path, image_root, csv_bytes=snapshot, protocol=protocol), hashlib.sha256(snapshot).hexdigest()
+    return read_cases(csv_path, image_root, csv_bytes=snapshot), hashlib.sha256(snapshot).hexdigest()
 
 
-def select_cases(rows: list[dict], phase: str, per_category: int, protocol: str = "legacy") -> list[dict]:
+def select_cases(rows: list[dict], phase: str) -> list[dict]:
+    """Use the entire canonical manifest; no category-based subset selection."""
+    validate_profile(rows, formal=phase == 'formal')
+    if phase == 'formal':
+        return rows
     if phase == "smoke":
         if len(rows) != 1:
             raise ValueError("Environment smoke CSV must contain exactly 1 non-evaluation case")
         return rows
     if phase == "pilot":
         if len(rows) != 3:
-            qualifier = "technical-check" if protocol == "shared24" else "independent calibration"
-            raise ValueError(f"Pilot CSV must contain exactly 3 {qualifier} cases")
+            raise ValueError("Pilot CSV must contain exactly 3 independent calibration cases")
+        if {row['target_frames'] for row in rows} != {129, 513}:
+            raise ValueError('Pilot must include both 129-frame and 513-frame cases')
         return rows
-    if protocol == "shared24":
-        targets = [row["target_frame_num"] for row in rows]
-        if (len(rows) != 24 or targets.count(128) != 18 or targets.count(512) != 6 or
-                {row["case_id"] for row in rows} != {f"{i:02d}" for i in range(1, 25)}):
-            raise ValueError("Formal shared24 requires IDs 01..24 exactly once, with 18 rows of 128 frames and 6 rows of 512 frames")
-        return rows
-    counts = {}
-    for row in rows:
-        counts[row["category"]] = counts.get(row["category"], 0) + 1
-    if len(counts) != 6 or any(count < per_category for count in counts.values()):
-        raise ValueError(f"Formal batch needs 6 categories with >= {per_category} cases each: {counts}")
-    taken, selected = {}, []
-    for row in rows:
-        category = row["category"]
-        taken[category] = taken.get(category, 0) + 1
-        if taken[category] <= per_category:
-            selected.append(row)
-    return selected
+    raise ValueError(f'Unknown phase: {phase}')
 
 
 def expected_assets() -> list[str]:

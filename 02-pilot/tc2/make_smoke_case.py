@@ -21,11 +21,11 @@ def main():
     image.save(args.out / "synthetic_ball.png")
     with (args.out / "cases.csv").open("w", encoding="utf-8", newline="") as stream:
         writer = csv.writer(stream)
-        writer.writerow(["case_id", "category", "image_path", "prompt", "seed"])
+        writer.writerow(["case_id", "category", "image_path", "prompt", "seed", "source_frame_num", "target_frames"])
         writer.writerow([
-            "smoke_synthetic_001", "diagnostic", "synthetic_ball.png",
+            "case_9000", "other", "synthetic_ball.png",
             "A red ball rolls slowly from left to right across a flat gray floor. The camera stays still.",
-            6132,
+            6132, 128, 129,
         ])
     (args.out / "NOT_BENCHMARK.txt").write_text(
         "Synthetic environment check only. Exclude from shared pilot, formal evaluation, "

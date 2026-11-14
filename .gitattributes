@@ -1,0 +1,3 @@
+# Preserve the exact CSV bytes bound by the shared dataset SHA256 receipts.
+/01-dataset/cases.csv -text
+/01-dataset/cases.canonical.csv -text

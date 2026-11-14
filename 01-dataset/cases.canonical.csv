@@ -1,0 +1,25 @@
+case_id,category,image_path,prompt,seed,source_frame_num,target_frames
+case_0001,single-human,dataset/01_a man is running on a dirt road.jpg,a man is running on a dirt road,42,512,513
+case_0002,single-human,dataset/02_a woman walking down a sidewalk with a bag.jpg,a woman walking down a sidewalk with a bag,42,128,129
+case_0003,single-human,dataset/03_an older man playing a saxophone on the street.jpg,an older man playing a saxophone on the street,42,128,129
+case_0004,multiple-human,dataset/04_a man and a woman are boxing in a boxing ring.jpg,a man and a woman are boxing in a boxing ring,42,512,513
+case_0005,multiple-human,dataset/05_an older woman and a young girl are knitting together.jpg,an older woman and a young girl are knitting together,42,128,129
+case_0006,multiple-human,dataset/06_two young girls playing with leaves in the woods.jpg,two young girls playing with leaves in the woods,42,128,129
+case_0007,animal,dataset/07_a giraffe walking in a field.jpg,a giraffe walking in a field,42,512,513
+case_0008,animal,dataset/08_a sea turtle swimming in the ocean under the water.jpg,a sea turtle swimming in the ocean under the water,42,128,129
+case_0009,transportation,dataset/09_a blue train traveling through a lush green area.jpg,a blue train traveling through a lush green area,42,512,513
+case_0010,transportation,dataset/10_a large cargo ship sailing in the water.jpg,a large cargo ship sailing in the water,42,128,129
+case_0011,food,dataset/11_a stack of pancakes covered in syrup and fruit.jpg,a stack of pancakes covered in syrup and fruit,42,128,129
+case_0012,food,dataset/12_a person slicing salmon on a cutting board.jpg,a person slicing salmon on a cutting board,42,128,129
+case_0013,plant,dataset/13_a dandelion blowing in the wind.jpg,a dandelion blowing in the wind,42,128,129
+case_0014,plant,dataset/14_a pink lotus flower in the middle of a pond.jpg,a pink lotus flower in the middle of a pond,42,128,129
+case_0015,other,dataset/15_a snowman wearing a santa hat and scarf.jpg,a snowman wearing a santa hat and scarf,42,128,129
+case_0016,other,dataset/16_a teddy bear sitting on a moss covered ground.jpg,a teddy bear sitting on a moss covered ground,42,128,129
+case_0017,architecture,dataset/17_the great wall of china in autumn.jpg,the great wall of china in autumn,42,128,129
+case_0018,architecture,dataset/18_tower bridge in london.jpg,tower bridge in london,42,128,129
+case_0019,scenery,dataset/19_a large waterfall in the middle of a lush green hillside.jpg,a large waterfall in the middle of a lush green hillside,42,512,513
+case_0020,scenery,dataset/20_the sun is setting over a lake in the mountains.jpg,the sun is setting over a lake in the mountains,42,128,129
+case_0021,indoor,dataset/21_a modern living room with wood floors and a tv.jpg,a modern living room with wood floors and a tv,42,128,129
+case_0022,indoor,dataset/22_an art gallery with paintings on the walls.jpg,an art gallery with paintings on the walls,42,128,129
+case_0023,abstract,dataset/23_A black and white abstract video featuring mesmerizing bubbles.jpg,A black and white abstract video featuring mesmerizing bubbles,42,512,513
+case_0024,abstract,dataset/24_a close up of a blue and orange liquid.jpg,a close up of a blue and orange liquid,42,128,129

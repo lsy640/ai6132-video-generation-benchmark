@@ -12,6 +12,9 @@ artifacts/
 *.ckpt
 *.pt
 *.pth
+*.bin
+*.out
+*.err
 *.mp4
 *.mov
 *.webm
@@ -19,3 +22,5 @@ artifacts/
 ratings.csv
 ratings_*.csv
 clip_map.csv
+# A's original image payload stays local; manifests and code can be reviewed separately.
+/01-dataset/dataset/

@@ -31,32 +31,11 @@ sbatch --partition=MGPU-TC2 --qos=normal /path/to/install_ltx.sh
 
 该作业安装固定上游代码及依赖，下载固定版本的 2B、upscaler 和 T5 资产，并保存完整环境导出。详见 [LTX-Video 安装与生成步骤](../../03-generation/ltx_video/README.md)。正式推理前须冻结模型版本与生成配置。
 
-## 长视频运行环境：已通过预检
-
-513 帧预检在旧环境（PyTorch 2.5.1+cu121 / cuDNN 9.1）完成去噪后，于 VAE 解码的大 Conv3D 处回退并发生显存不足。独立 `env-cu126` 已在 L40S 上通过 513 帧和 129 帧各一条预检，使用 PyTorch 2.6.0+cu126、torchvision 0.21.0 和 cuDNN 9.5.1。两次生成计时分别约 166.22 秒和 13.16 秒，属于单条观测，详见 [验证记录](VALIDATION.md)。
-
-正式 24 条作业 `54359` 已完成（COMPLETED，退出码 0:0），耗时 22 分 32 秒。`formal-cu126-20261114` 中 18 条为 129 帧、6 条为 513 帧，均保持 768×432 / 24 fps，运行时技术验收通过。全部视频已下载，本地结构、元数据及 SHA256 独立核验通过，24 个视频哈希一致、错误数为 0。人工盲评尚未完成，视频质量结论留待评审。
-
-本批短片、长片的平均生成计时分别为 13.5246 秒和 164.3681 秒，统计范围与显存数据见 [验证记录](VALIDATION.md)。
-
-`bootstrap_cu126.sh` 克隆已安装的基础环境，保留其余依赖，再升级 PyTorch 相关包，旧 `env` 保持不变。模型权重、BF16、两阶段配置、768×432、24 fps 和请求帧数不变。`prepare_environment.sh` 与原 `constraints.txt` 仍用于 2.5.1 基础环境，不在新环境中重跑，以免降级。
-
-以下为新部署示例；已有 `env-cu126` 时直接选择该环境，不重复创建。第二项等待安装成功，再用一条目标为 512 帧的原始数据行检查 513 帧输出；子清单保留 A 的字段、prompt 和 seed。
-
-```bash
-export AI6132_CODE="$PWD"
-export AI6132_LTX_ENV="$AI6132_ROOT/env-cu126"
-export TORCH_CUDNN_V8_API_DISABLED=0
-C_SETUP_JOB=$(sbatch --parsable --partition=MGPU-TC2 --qos=normal \
-  02-pilot/tc2/bootstrap_cu126.sh)
-sbatch --dependency="afterok:$C_SETUP_JOB" --partition=MGPU-TC2 --qos=normal \
-  02-pilot/tc2/run_ltx.sh smoke /absolute/shared/preflight-long-01.csv \
-  "$AI6132_ROOT/outputs/preflight-long-cu126-01" --protocol shared24
-```
-
-`run_ltx.sh` 通过 `AI6132_LTX_ENV` 选择环境，未设置时仍使用旧 `env`。新环境检查使用独立输出目录，保留此前失败的日志和记录。
-
 ## 完整流程检查与后续批次
+
+C 已在 PR #2 报告完成cu126环境下的24条正式视频，原始报告及独立复核边界见 [C 正式批次报告](C_FORMAL_REPORT.md)。旧cu121环境在513帧VAE解码失败，当前 `run_ltx.sh` 默认激活 `AI6132_LTX_ENV=${AI6132_ROOT}/env-cu126`；可显式选择其他已验证环境。
+
+在基础环境和LTX安装成功后，查询配额并提交 `sbatch 02-pilot/tc2/bootstrap_cu126.sh` 创建独立cu126环境。脚本默认MGPU-TC2/normal、1节点、8CPU、28G、1GPU、1小时，无节点绑定；安装前检查Home用量、克隆体积和12GB升级缓存预留。已有环境时不重复安装，也不在其中重跑旧constraints。Conda hook与activate均保护nounset，启用cuDNN v8 API路径。正式生成仍保持原权重、BF16与官方两阶段配置。
 
 从仓库根目录提交 CPU 作业，建立合成环境检查输入（个人环境中需有 Pillow）：
 
@@ -79,7 +58,7 @@ sbatch --partition=MGPU-TC2 --qos=normal /path/to/run_ltx.sh \
   pilot /absolute/shared/pilot_cases.csv /absolute/artifacts/pilot
 ```
 
-全组冻结配置及正式样本后，提交 `formal /absolute/shared/cases.csv /absolute/artifacts/formal --per-category 2`。扩批与续跑规则见生成工具说明。示例路径均需替换为实际路径。
+当前A实际11类混合长度清单先经CPU适配，再提交 `formal /absolute/cases.canonical.csv /absolute/artifacts/formal-mixed`，默认使用全部24个案例和逐案例帧数。129/513帧须共同试跑验收。示例路径均需替换为实际路径。
 
 ## 作业状态
 
@@ -92,7 +71,7 @@ sacct -j JOB_ID --format=JobID,State,Elapsed,ExitCode
 
 ## CPU 工具与测试
 
-`run_cpu.sh` 覆盖人评准备/素材核验/收表、合成首图创建、生成清单检查和两套单元测试。所有 Python 均在 `sbatch` 分配的计算节点执行；不要在 Head Node 用 `bash run_cpu.sh` 或直接运行 Python。无需 GPU，默认 `MGPU-TC2 / normal / 1 node / 1 CPU / 2G / 0 GPU / 10 分钟`，无节点绑定；这些是脚本默认值，每次提交前需用 `mytcinfo` 和必要的 `sacctmgr` 查询核对，按实际权限用 sbatch 参数覆盖。
+`run_cpu.sh` 覆盖人评准备/素材核验/收表、合成首图创建、生成清单检查和三套单元测试。所有 Python 均在 `sbatch` 分配的计算节点执行；不要在 Head Node 用 `bash run_cpu.sh` 或直接运行 Python。无需 GPU，默认 `MGPU-TC2 / normal / 1 node / 1 CPU / 2G / 0 GPU / 10 分钟`，无节点绑定；这些是脚本默认值，每次提交前需用 `mytcinfo` 和必要的 `sacctmgr` 查询核对，按实际权限用 sbatch 参数覆盖。
 
 从仓库根目录提交；若在别处提交，先设置 `AI6132_CODE` 为仓库绝对路径。脚本加载 `anaconda` 模块，以非交互方式激活 `AI6132_CPU_ENV`；默认环境为 `${AI6132_ROOT:-$HOME/ai6132-c}/env`。可改用已有个人 Python 3.10+ 环境；只有创建合成图片需要 Pillow，其他 CPU 入口仅使用标准库。
 
@@ -101,10 +80,16 @@ export AI6132_CODE="$PWD"
 export AI6132_CPU_ENV=/absolute/path/to/personal/conda/env
 mytcinfo
 sbatch 02-pilot/tc2/run_cpu.sh validate-cases \
-  --cases /absolute/shared/cases.csv --phase formal --per-category 2
+  --cases 01-dataset/cases.canonical.csv --phase formal
 sbatch 02-pilot/tc2/run_cpu.sh test
 ```
 
 人评参数示例见 [人评说明](../../05-human-evaluation/README.md)。日志写入提交目录的 `ai6132_cpu_<jobid>.out` 和 `.err`。这些 CPU 任务无需 checkpoint、训练恢复、signal 或后继作业；测试中出现的模拟中断日志不代表真实推理失败。
+
+新增CPU子命令：dataset（适配/验证原始清单）、assets（已下载资产的revision/SHA256凭据）、media（完整时长匿名交接）、vbench-cache（缓存凭据）、import-ltx（完整解码接收C的已完成24条并派生规范清单）。详见各阶段README。test也覆盖共享工具回归；完整CPU套件除Pillow外需要可用FFmpeg/ffprobe。
+
+B的生成与评估统一通过 `run_b_gpu.sh hunyuan|vbench|qwen`，显式设置个人 `AI6132_GPU_ENV`。默认MGPU-TC2/normal、1node、4CPU、28G、1GPU、2小时，无节点绑定；提交前重新查询资源与配额。stdout/stderr为提交目录的ai6132_b_JOBID.out/.err。Hunyuan、VBench、Qwen按单GPU配额串行；CPU任务只有在总CPU/内存配额允许时并行。这里是推理批处理，不使用训练checkpoint或无限自动重提；逐案例/请求日志支持继续未启动项。
+
+正式生成前可提交 `preflight_hunyuan.sh` 检查输入和下载权限；`bootstrap_hunyuan.sh` 用于独立Hunyuan环境安装与CPU导入检查，均无GPU需求。参数、路径和验收边界见 [B生成说明](../../03-generation/hunyuan_video/README.md)。
 
 参考：[PyTorch 对应版本安装命令](https://pytorch.org/get-started/previous-versions/)、项目 `PLAN.md`、学校 TC2 用户指南。

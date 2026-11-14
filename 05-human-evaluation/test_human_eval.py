@@ -25,7 +25,7 @@ class HumanEvaluationTests(unittest.TestCase):
             "clip_id": f"clip_{number:04}", "video_path": f"videos/clip_{number:04}.mp4",
             "image_path": f"images/clip_{number:04}.png", "prompt": "A person walks, then turns.",
             "status": "success", "failure_reason": "",
-        } for number in range(1, 49)]
+        } for number in range(1, 97)]
         # Preparation only copies bytes. B must supply actually decoded media.
         for row in self.rows:
             (self.root / row["image_path"]).write_bytes(b"synthetic reference fixture")
@@ -40,7 +40,7 @@ class HumanEvaluationTests(unittest.TestCase):
 
     def prepare(self, name="pack"):
         out = self.root / name
-        h.prepare(self.manifest, out, self.raters, 6132, 48, "formal")
+        h.prepare(self.manifest, out, self.raters, 6132, 96, "formal")
         return out
 
     def submissions(self, out):
@@ -50,7 +50,7 @@ class HumanEvaluationTests(unittest.TestCase):
         for path in files.values():
             rows = h.read_csv(path, h.RATING_FIELDS)
             for row in rows:
-                if row["clip_id"] != "clip_0048":
+                if row["clip_id"] != "clip_0096":
                     row.update(dict.fromkeys(h.SCORES, "3"))
             h.write_csv(path, h.RATING_FIELDS, rows)
 
@@ -87,21 +87,21 @@ class HumanEvaluationTests(unittest.TestCase):
         before = {rater: path.read_bytes() for rater, path in files.items()}
         report = h.validate_submissions(self.manifest, files, self.raters)
         self.assertTrue(report["valid"])
-        self.assertEqual(report["expected_total_records"], 192)
+        self.assertEqual(report["expected_total_records"], 384)
         self.assertEqual(before, {rater: path.read_bytes() for rater, path in files.items()})
 
     def test_blank_success_scores_are_missing(self):
         files = self.submissions(self.prepare())
         report = h.validate_submissions(self.manifest, files, self.raters)
         self.assertFalse(report["valid"])
-        self.assertEqual(len(report["errors"]), 47 * 4 * 3)
+        self.assertEqual(len(report["errors"]), 95 * 4 * 3)
         self.assertEqual({error["code"] for error in report["errors"]}, {"missing_score"})
 
     def test_duplicate_unknown_missing_wrong_rater_and_invalid_scores(self):
         files = self.submissions(self.prepare())
         self.fill_synthetic_test_scores(files)
         rows = h.read_csv(files["A"], h.RATING_FIELDS)
-        successful = [row for row in rows if row["clip_id"] != "clip_0048"]
+        successful = [row for row in rows if row["clip_id"] != "clip_0096"]
         successful[0]["rater_id"] = "B"
         successful[0][h.SCORES[0]] = "3.0"
         successful[0][h.SCORES[1]] = "0"
@@ -120,7 +120,7 @@ class HumanEvaluationTests(unittest.TestCase):
         files = self.submissions(self.prepare())
         self.fill_synthetic_test_scores(files)
         rows = h.read_csv(files["D"], h.RATING_FIELDS)
-        failure = next(row for row in rows if row["clip_id"] == "clip_0048")
+        failure = next(row for row in rows if row["clip_id"] == "clip_0096")
         failure.update(reference_fidelity="1", comment="")
         h.write_csv(files["D"], h.RATING_FIELDS, rows)
         report = h.validate_submissions(self.manifest, files, self.raters)
@@ -152,7 +152,18 @@ class HumanEvaluationTests(unittest.TestCase):
         with self.assertRaises(h.InputError):
             self.prepare()
         with self.assertRaises(h.InputError):
-            h.prepare(self.manifest, self.root / "new", self.raters, 6132, 96, "formal")
+            h.prepare(self.manifest, self.root / "new", self.raters, 6132, 48, "formal")
+
+    def test_formal_requires_exactly_96_records(self):
+        h.write_csv(self.manifest, h.MANIFEST_FIELDS, self.rows[:48])
+        with self.assertRaisesRegex(h.InputError, '96'):
+            h.prepare(self.manifest, self.root / 'old-size', self.raters, 6132, 48, 'formal')
+        h.write_csv(self.manifest, h.MANIFEST_FIELDS, self.rows)
+        out = self.prepare()
+        frozen = json.loads((out / 'preparation.json').read_text())
+        frozen['expected_clips'] = 48
+        with self.assertRaisesRegex(h.InputError, '96'):
+            h.verify_packet(frozen, out)
 
     def test_calibration_is_separate(self):
         h.write_csv(self.manifest, h.MANIFEST_FIELDS, self.rows[:3])

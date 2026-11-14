@@ -24,7 +24,7 @@ B 提供已匿名的 `anonymous_clips.csv`、视频和首图。CSV 字段及顺�
 
 B 混排模型来源后分配 `clip_id`，首图按每条 clip 复制命名。C 也参与评分，因此交接清单中只保留上述六列；模型映射 `clip_map.csv` 和详细错误日志单独保存，收齐四份评分后交给 D。
 
-B 负责确认评分副本可解码、取前 5 秒、768×432、12 fps、H.264，并清除文件名、画面和 metadata 中的模型标识。可播放但质量差的视频仍标为 `success`。技术失败保留在清单中，四人覆盖同一批 48 或 96 条记录。
+B 负责确认评分副本完整解码、保留完整时长、768×432、12 fps、H.264，并清除文件名和 metadata 中的模型标识。若画面本身含明确模型标识，应暂停分发并核查，不能声称转码自动消除了画面标识。正式批次固定为11类混合长短基准的96条，四人均观看全片；可播放但质量差的视频仍标为success，技术失败保留行。准备与核验评分包均执行该数量约束。
 
 ## 准备评分材料
 
@@ -33,18 +33,18 @@ B 负责确认评分副本可解码、取前 5 秒、768×432、12 fps、H.264�
 ```bash
 sbatch 02-pilot/tc2/run_cpu.sh human-eval prepare \
   --manifest /path/to/private_handoff/anonymous_clips.csv \
-  --out /path/to/private_review/formal_48 \
+  --out /path/to/private_review/formal_mixed_96 \
   --raters A B C D \
   --seed 6132 \
-  --expected-clips 48
+  --expected-clips 96
 ```
 
-扩展批次用 `--expected-clips 96`。校准使用独立的三条试跑清单及输出目录，参数为 `--phase calibration --expected-clips 3`；校准评分与正式评分分开保存。
+当前正式批次固定 `--expected-clips 96`，B先提交自己的完整评分，再运行Qwen；其他人交卷前封存映射和Qwen结果。校准使用独立的三条试跑清单及输出目录，参数为 `--phase calibration --expected-clips 3`；校准评分与正式评分分开保存。
 
 输出结构：
 
 ```text
-formal_48/
+formal_mixed_96/
   assets/                         # 视频和首图
   preparation.json               # 批次、种子和文件校验信息
   raters/
@@ -66,7 +66,7 @@ formal_48/
 
 ```bash
 sbatch 02-pilot/tc2/run_cpu.sh human-eval verify-packet \
-  --preparation /path/to/private_review/formal_48/preparation.json \
+  --preparation /path/to/private_review/formal_mixed_96/preparation.json \
   --packet-root /path/to/received/A_packet --rater A
 ```
 
@@ -83,8 +83,8 @@ sbatch 02-pilot/tc2/run_cpu.sh human-eval verify-packet \
 ```bash
 sbatch 02-pilot/tc2/run_cpu.sh human-eval validate \
   --manifest /path/to/private_handoff/anonymous_clips.csv \
-  --preparation /path/to/private_review/formal_48/preparation.json \
-  --packet-root /path/to/private_review/formal_48 \
+  --preparation /path/to/private_review/formal_mixed_96/preparation.json \
+  --packet-root /path/to/private_review/formal_mixed_96 \
   --raters A B C D \
   --ratings A=/path/to/submitted/A.csv B=/path/to/submitted/B.csv \
             C=/path/to/submitted/C.csv D=/path/to/submitted/D.csv \

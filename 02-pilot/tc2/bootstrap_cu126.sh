@@ -1,5 +1,7 @@
 #!/bin/bash
 # Prepare a separate runtime for long Conv3D inputs; keep the original env intact.
+#SBATCH --partition=MGPU-TC2
+#SBATCH --qos=normal
 #SBATCH --job-name=ltx-cu126-setup
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -19,11 +21,24 @@ export CONDA_PKGS_DIRS="$AI6132_ROOT/conda-pkgs"
 export PIP_CACHE_DIR="$AI6132_ROOT/pip-cache"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
 export PYTHONUNBUFFERED=1
+export TORCH_CUDNN_V8_API_DISABLED=0
+# Budget a full clone plus 12 GB for upgraded packages and caches in the 100 GB Home.
+AI6132_HOME_LIMIT_BYTES="${AI6132_HOME_LIMIT_BYTES:-100000000000}"
+AI6132_HOME_USED_BYTES=$(du -s -B1 "$HOME" | cut -f1)
+AI6132_CLONE_BYTES=$(du -s -B1 "$AI6132_ROOT/env" | cut -f1)
+if (( AI6132_HOME_USED_BYTES + AI6132_CLONE_BYTES + 12000000000 > AI6132_HOME_LIMIT_BYTES )); then
+  printf 'Insufficient Home quota budget for an isolated clone and package caches.\n' >&2
+  exit 2
+fi
 module load miniconda3/25.5.1
+set +u
 eval "$(conda shell.bash hook)"
+set -u
 "$AI6132_ROOT/env/bin/python" -c 'import torch; print("Original runtime:", torch.__version__, "cuDNN", torch.backends.cudnn.version())'
 conda create --prefix "$AI6132_LTX_ENV" --clone "$AI6132_ROOT/env" --yes --offline
+set +u
 conda activate "$AI6132_LTX_ENV"
+set -u
 python -m pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu126
 python -m pip check
 python - <<'PY'
