@@ -4,6 +4,8 @@
 
 TC2当前主机内存配额30G，无法同时常驻全部卸载组件。适配器在GPU初始化组件、按官方最终fp16精度直接加载文本编码器、保留Transformer分组卸载钩子并关闭全组件CPU迁移；这些选择写入冻结设置。输出逐帧编码，避免为513帧视频同时分配多份全片浮点数组。生成和长片可行性以实际运行结果为准。
 
+VAE最终解码采用64像素空间分块、0.25重叠，关闭单卡分块收集；首图编码保持官方设置，完整时间轴一并解码。解码前原子保存已经缩放的VAE输入潜变量及其SHA256、形状、精度和设置，供解码故障恢复使用。该资源配置随正式批次冻结，生成步数、种子、分辨率和129/513帧目标保持不变。
+
 分别准备 Hunyuan、VBench/CPU 和 Qwen 的个人环境，不复用 C 的 LTX 依赖版本。Hunyuan 使用固定官方 commit 的 requirements（当前官方组合需要 torch>=2.6、diffusers0.35、transformers4.57.1，须将最终兼容版本锁定）。安装、编译、导入和模型检查也只能经 sbatch。此仓库不会在运行时安装依赖或自动下载权重。
 
 ### 正式作业前置检查
@@ -45,7 +47,9 @@ sbatch 02-pilot/tc2/run_b_gpu.sh hunyuan \
   --pilot-receipt /absolute/artifacts/hunyuan-pilot/pilot_pass.json --max-new-cases 24
 ```
 
-本次用户明确要求“不用试跑，直接开始正式生成”，使用 `--skip-pilot-reason` 记录原始指示，冻结为 `pilot_validation.status=skipped_by_user`，不声称试跑通过。具体入口为 `02-pilot/tc2/generate_hunyuan_formal.sh`，MGPU-TC2/normal、1节点、8CPU、30G、1GPU、5小时50分钟；按用户要求固定TC2N08，每次提交前查询配额和节点状态。输入为同一正式24例，输出在个人 `ai6132-b/outputs/formal-20261114/`。
+本次用户明确要求“不用试跑，直接开始正式生成”，使用 `--skip-pilot-reason` 记录原始指示，冻结为 `pilot_validation.status=skipped_by_user`，不声称试跑通过。具体入口为 `02-pilot/tc2/generate_hunyuan_formal.sh`，MGPU-TC2/normal、1节点、8CPU、30G、1GPU、5小时50分钟；按用户要求固定TC2N08，每次提交前查询配额和节点状态。输入为同一正式24例，当前输出为个人 `ai6132-b/outputs/formal-20261114-vae64/`，可用 `AI6132_FORMAL_OUT` 指定新的批次目录。
+
+首轮 `formal-20261114/` 的513帧采样完成后在VAE解码OOM，原请求、失败结果及23条not_started保留。修复使用独立目录，不覆盖原批次。54413已用真实VAE、完整513帧潜变量及额外18GiB驻留显存验证此解码配置，结果有限且尺寸为513×480×848；该解码回归不计入正式24例结果。修复后的正式生成作业为54414。
 
 可根据已完成案例的实测时间调整每作业 `--max-new-cases`，留出时间余量。CLI读取SLURM结束时间，用对应长度已完成案例的耗时加余量判断是否继续启动；首次估计至少给短片15分钟、长片60分钟，并额外保留10分钟。预算不足时只在案例之间停止，保存 `continuation_JOBID.json`，已完成输出保持不变，后继批处理继续not_started项。此时退出0表示本段无技术失败，仍须等到 `DONE.json` 和独立24例验收通过才算正式批次完成。
 

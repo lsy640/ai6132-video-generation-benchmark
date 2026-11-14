@@ -364,6 +364,7 @@ class BenchmarkTests(unittest.TestCase):
         torch.cuda = types.SimpleNamespace(is_available=lambda: True, is_bf16_supported=lambda: True,
             get_device_name=lambda _i: 'fixture-gpu', set_device=lambda _i: None,
             synchronize=lambda: None, reset_peak_memory_stats=lambda: None,
+            empty_cache=lambda: state.update(cache_released=True),
             max_memory_allocated=lambda: 1024, max_memory_reserved=lambda: 2048)
         def initialize(*_args, **kwargs):
             state.update(initialized=True, init_method=kwargs['init_method'])
@@ -382,7 +383,17 @@ class BenchmarkTests(unittest.TestCase):
             def permute(self, *_args): return self
             def float(self): return self
             def numpy(self): return np.zeros((36, 64, 3), dtype=np.float32)
+        class Latents:
+            shape = (1, 32, 33, 3, 4)
+            dtype = 'fixture-bf16'
+            def detach(self): return self
+            def cpu(self): return self
+            def contiguous(self): return self
         class Pipeline:
+            def __init__(self):
+                self.vae = types.SimpleNamespace(decode=lambda *_args, **_kwargs: Video(),
+                    set_tile_sample_min_size=lambda size, overlap: state.update(vae_tile=(size, overlap)),
+                    disable_tile_parallelism=lambda: state.update(vae_parallel=False))
             @classmethod
             def create_pipeline(cls, **kwargs):
                 state['transformer_version'] = kwargs['transformer_version']
@@ -395,7 +406,7 @@ class BenchmarkTests(unittest.TestCase):
             def __call__(self, **kwargs):
                 state['generation'] = kwargs
                 state['module_offloading'] = self.enable_offloading
-                return types.SimpleNamespace(videos=Video())
+                return types.SimpleNamespace(videos=self.vae.decode(Latents()))
         modules = {}
         for name in ('hyvideo', 'hyvideo.pipelines', 'hyvideo.commons', 'hyvideo.models', 'imageio'):
             modules[name] = types.ModuleType(name)
@@ -423,8 +434,13 @@ class BenchmarkTests(unittest.TestCase):
         text_encoders = types.ModuleType('hyvideo.models.text_encoders')
         original_loader = lambda: state.update(text_loader_dtype=state['default_dtype'])
         text_encoders.load_text_encoder = original_loader
+        safetensors = types.ModuleType('safetensors')
+        safetensors.__path__ = []
+        safe_torch = types.ModuleType('safetensors.torch')
+        safe_torch.save_file = lambda tensors, path: Path(path).write_bytes(b'Synthetic retained latent fixture')
         modules.update({'torch': torch, pipeline.__name__: pipeline, parallel.__name__: parallel,
-                        infer.__name__: infer, text_encoders.__name__: text_encoders, 'imageio.v2': imageio})
+                        infer.__name__: infer, text_encoders.__name__: text_encoders, 'imageio.v2': imageio,
+                        'safetensors': safetensors, 'safetensors.torch': safe_torch})
         with patch.dict('sys.modules', modules), patch.object(hunyuan, 'binary', return_value='/mock/nvidia-smi'), \
              patch.object(hunyuan.subprocess, 'check_output', return_value='fixture-driver'), \
              patch.object(hunyuan, 'inspect_video', return_value=dict(frames=129, fps=24, width=64, height=36,
@@ -442,6 +458,14 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(state['default_dtype'], 'fixture-fp32')
         self.assertIs(text_encoders.load_text_encoder, original_loader)
         self.assertEqual(state['generation']['num_inference_steps'], 8)
+        self.assertEqual(state['vae_tile'], (64, 0.25))
+        self.assertFalse(state['vae_parallel'])
+        self.assertFalse(state['generation']['enable_vae_tile_parallelism'])
+        self.assertTrue(state['cache_released'])
+        retained = json.loads((directory / 'vae_input_latents.json').read_text())
+        self.assertTrue(retained['already_scaled_for_vae'])
+        self.assertEqual(retained['target_frames'], 129)
+        self.assertEqual(retained['sha256'], sha256(directory / 'vae_input_latents.safetensors'))
         self.assertEqual(json.loads((directory / 'result.json').read_text())['status'], 'success')
 
 

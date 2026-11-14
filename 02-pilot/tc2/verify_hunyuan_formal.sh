@@ -15,6 +15,7 @@ set -euo pipefail
 test -n "${SLURM_JOB_ID:-}"
 : "${AI6132_CODE:?Set the benchmark repository path}"
 AI6132_B_ROOT="${AI6132_B_ROOT:-$HOME/ai6132-b}"
+export AI6132_FORMAL_OUT="${AI6132_FORMAL_OUT:-$AI6132_B_ROOT/outputs/formal-20261114-vae64}"
 module load anaconda
 set +u
 eval "$(conda shell.bash hook)"
@@ -41,7 +42,7 @@ if sha256(current) != receipt['files']['pip-freeze.txt']:
 print('Complete installed environment still matches the frozen receipt')
 PY
 python -m ai6132_benchmark.verify_hunyuan \
-  --cases 01-dataset/cases.canonical.csv --out "$AI6132_B_ROOT/outputs/formal-20261114" \
+  --cases 01-dataset/cases.canonical.csv --out "$AI6132_FORMAL_OUT" \
   --report "$AI6132_B_ROOT/environment/formal_verification_${SLURM_JOB_ID}.json"
 python - <<'PY'
 import json
@@ -51,10 +52,11 @@ from statistics import median
 from ai6132_benchmark.hunyuan import MODEL_ID
 from ai6132_benchmark.io import read_csv, sha256, write_json
 root = Path(os.environ['AI6132_B_ROOT'])
+output = Path(os.environ['AI6132_FORMAL_OUT'])
 verification_path = root / 'environment' / f"formal_verification_{os.environ['SLURM_JOB_ID']}.json"
 verified = json.loads(verification_path.read_text())
-batch = json.loads((root / 'outputs/formal-20261114/batch.json').read_text())
-_, rows, _ = read_csv(root / 'outputs/formal-20261114/runs.csv')
+batch = json.loads((output / 'batch.json').read_text())
+_, rows, _ = read_csv(output / 'runs.csv')
 public = Path('03-generation/hunyuan_video/FORMAL_VALIDATION.json')
 if public.exists():
     raise ValueError('Retain the existing public validation summary; do not overwrite it')

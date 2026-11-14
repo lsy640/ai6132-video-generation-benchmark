@@ -17,6 +17,7 @@ set -euo pipefail
 test -n "${SLURM_JOB_ID:-}"
 : "${AI6132_CODE:?Set the benchmark repository path}"
 AI6132_B_ROOT="${AI6132_B_ROOT:-$HOME/ai6132-b}"
+AI6132_FORMAL_OUT="${AI6132_FORMAL_OUT:-$AI6132_B_ROOT/outputs/formal-20261114-vae64}"
 export AI6132_GPU_ENV="$AI6132_B_ROOT/env"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-8}"
 export OPENBLAS_NUM_THREADS="$OMP_NUM_THREADS"
@@ -32,6 +33,6 @@ bash 02-pilot/tc2/run_b_gpu.sh hunyuan \
   --cases 01-dataset/cases.canonical.csv --phase formal \
   --upstream "$AI6132_B_ROOT/HunyuanVideo-1.5" \
   --commit 60783e704160023913bee78f0b47036d393d4dfa \
-  --assets "$AI6132_B_ROOT/assets" --out "$AI6132_B_ROOT/outputs/formal-20261114" \
+  --assets "$AI6132_B_ROOT/assets" --out "$AI6132_FORMAL_OUT" \
   --skip-pilot-reason 'User explicitly requested: 不用试跑，直接开始正式生成 (2026-11-14)'
 sha256sum --check "$AI6132_B_ROOT/environment/formal_sources_${SLURM_JOB_ID}.sha256"

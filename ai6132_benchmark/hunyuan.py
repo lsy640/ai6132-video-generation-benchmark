@@ -17,13 +17,15 @@ MODEL_ID = 'HunyuanVideo-1.5-480P-I2V-step-distill'
 SETTINGS = {'resolution': '480p', 'steps': 8, 'dtype': 'bfloat16', 'fps': 24,
             'offloading': True, 'group_offloading': True, 'overlap_group_offloading': False,
             'module_offloading': False, 'component_init_device': 'cuda', 'text_encoder_load_dtype': 'float16',
+            'vae_decode_tile_size': 64, 'vae_decode_overlap': 0.25, 'vae_tile_parallelism': False,
             'rewrite': False, 'sr': False, 'cache': False}
 FIELDS = ['case_id', 'category', 'model_id', 'phase', 'seed', 'source_frame_num', 'target_frames',
           'status', 'failure_reason', 'weight_version', 'weight_revision', 'upstream_commit',
           'config', 'image_sha256', 'native_video', 'video_sha256', 'native_frames', 'native_width',
           'native_height', 'native_fps', 'native_duration_seconds', 'native_codec', 'elapsed_seconds',
           'worker_wall_seconds', 'gpu_model', 'driver_version', 'peak_vram_allocated_mib',
-          'peak_vram_reserved_mib', 'started_at', 'finished_at', 'log_path']
+          'peak_vram_reserved_mib', 'started_at', 'finished_at', 'log_path',
+          'vae_input_latents', 'vae_input_latents_sha256']
 
 
 def now():
@@ -54,6 +56,37 @@ def create_pipeline(torch, pipeline_class, assets):
     finally:
         text_encoders.load_text_encoder = original
     return pipe
+
+
+def install_decode_memory_guard(torch, pipe, directory, record):
+    """Change only final spatial decoding; retain the complete scaled VAE input."""
+    original = pipe.vae.decode
+    directory = Path(directory)
+
+    def decode(latents, *args, **kwargs):
+        from safetensors.torch import save_file
+        retained = latents.detach().cpu().contiguous()
+        temporary = directory / '.vae_input_latents.safetensors.tmp'
+        destination = directory / 'vae_input_latents.safetensors'
+        if destination.exists() or temporary.exists():
+            raise ValueError('Refusing to overwrite retained denoised latents')
+        save_file({'vae_input': retained}, str(temporary))
+        temporary.replace(destination)
+        record.update(vae_input_latents=str(destination), vae_input_latents_sha256=sha256(destination))
+        write_json(directory / 'vae_input_latents.json', {
+            'sha256': record['vae_input_latents_sha256'], 'shape': list(retained.shape),
+            'dtype': str(retained.dtype), 'already_scaled_for_vae': True,
+            'target_frames': int(record['target_frames']), 'seed': record.get('seed'),
+            'image_sha256': record.get('image_sha256'),
+            'decode_tile_size': SETTINGS['vae_decode_tile_size'],
+            'decode_overlap': SETTINGS['vae_decode_overlap'], 'temporal_tiling': False})
+        del retained
+        pipe.vae.set_tile_sample_min_size(SETTINGS['vae_decode_tile_size'], SETTINGS['vae_decode_overlap'])
+        pipe.vae.disable_tile_parallelism()
+        torch.cuda.empty_cache()
+        return original(latents, *args, **kwargs)
+
+    pipe.vae.decode = decode
 
 
 def worker(request_path):
@@ -100,10 +133,12 @@ def worker(request_path):
         # Keep the official Transformer group hooks active, but avoid moving the
         # encoders/VAE onto a host already holding the offloaded Transformer.
         pipe.enable_offloading = False
+        install_decode_memory_guard(torch, pipe, Path(request_path).parent, row)
         with Image.open(payload['image']) as picture, torch.inference_mode():
             result = pipe(prompt=payload['prompt'], reference_image=picture.convert('RGB'), aspect_ratio='16:9',
                           video_length=int(row['target_frames']), num_inference_steps=8, enable_sr=False,
-                          prompt_rewrite=False, seed=int(row['seed']), output_type='pt')
+                          prompt_rewrite=False, seed=int(row['seed']), output_type='pt',
+                          enable_vae_tile_parallelism=SETTINGS['vae_tile_parallelism'])
         video = result.videos
         if video.ndim == 5:
             if video.shape[0] != 1:
