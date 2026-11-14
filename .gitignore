@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+.env
+.env.*
+!.env.example
+.cache/
+runtime/
+artifacts/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.mp4
+*.mov
+*.webm
+# Keep raw scores and blind/unblinding mappings out of the public repository.
+ratings.csv
+ratings_*.csv
+clip_map.csv

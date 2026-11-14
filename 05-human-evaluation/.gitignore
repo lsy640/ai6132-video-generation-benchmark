@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+# Actual review packets and submissions belong outside this public repository.
+assets/
+raters/
+preparation.json
+anonymous_clips.csv
+clip_map.csv
+ratings.csv
+order.csv
