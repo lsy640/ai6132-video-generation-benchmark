@@ -4,7 +4,9 @@
 
 已收到 A 的 24 条统一数据，按新版要求使用 `--protocol shared24`：18 条目标 128 帧、6 条目标 512 帧，LTX 分别生成最近的合法帧数 **129 / 513**，保持 **768×432 / 24 fps**。
 
-2026-11-14，独立 `env-cu126` 已在 TC2 L40S 上通过 **513 帧和 129 帧各一条预检**，使用 PyTorch 2.6.0+cu126 / torchvision 0.21.0 / cuDNN 9.5.1。原权重、BF16 和两阶段 7+3 配置不变。正式 24 条作业 `54359` 已提交，尚未完成整批验收。
+2026-11-14，正式 24 条作业 `54359` 在 TC2 L40S 上完成（COMPLETED，0:0），耗时 **22 分 32 秒**。18 条 129 帧、6 条 513 帧均通过运行时技术验收；全部视频已下载，本地结构、元数据及 SHA256 核验通过，24 个视频哈希一致、错误数为 0。**生成与技术验收完成，人工盲评尚未完成**，这里的成功状态不表示画面质量合格。
+
+运行环境为 PyTorch 2.6.0+cu126 / torchvision 0.21.0 / cuDNN 9.5.1，原权重、BF16 和两阶段 7+3 配置不变。本批短片、长片平均生成计时分别为 13.5246 秒、164.3681 秒，详见 [验证记录](../../02-pilot/tc2/VALIDATION.md)。
 
 此前旧 PyTorch 2.5.1+cu121 / cuDNN 9.1 的 513 帧尝试在 VAE 大 Conv3D 处回退并显存不足；该失败与最初 121 帧合成 smoke 均保留在 [验证记录](../../02-pilot/tc2/VALIDATION.md)。新环境的长、短片生成计时分别约 166.22 秒、13.16 秒，是单条观测，不是批次平均速度。
 
@@ -133,6 +135,6 @@ legacy 试跑阶段可通过 `--width`、`--height`、`--num-frames`、`--frame-
 sbatch 02-pilot/tc2/run_cpu.sh test
 ```
 
-本次生成工具的 13 项 CPU 测试通过，覆盖 legacy、完整 24 行映射、逐 case 129/513 帧请求、参数冲突、冻结和续跑。CPU 测试使用合成数据；真实 GPU 长短片预检另见验证记录。
+本次 shared24 更新的 13 项 CPU 测试在本地通过，覆盖 legacy、完整 24 行映射、逐 case 129/513 帧请求、参数冲突、冻结和续跑。CPU 测试使用合成数据；真实 GPU 运行与正式批次验收另见验证记录。
 
 官方依据：[仓库与安装](https://github.com/Lightricks/LTX-Video/tree/50f0aef1297574a4b29acbdb874e3a363a6d5f2e)、[2B 两阶段配置](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/configs/ltxv-2b-0.9.8-distilled.yaml)、[推理入口](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/ltx_video/inference.py)、[PyTorch 2.5.1 安装](https://pytorch.org/get-started/previous-versions/#v251)。
