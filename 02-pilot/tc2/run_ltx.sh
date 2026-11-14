@@ -21,6 +21,7 @@ AI6132_OUTPUT="$3"
 shift 3
 AI6132_ROOT="${AI6132_ROOT:-$HOME/ai6132-c}"
 AI6132_CODE="${AI6132_CODE:-$AI6132_ROOT/code}"
+AI6132_LTX_ENV="${AI6132_LTX_ENV:-$AI6132_ROOT/env}"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
 export MKL_NUM_THREADS="$OMP_NUM_THREADS"
 export OPENBLAS_NUM_THREADS="$OMP_NUM_THREADS"
@@ -29,7 +30,7 @@ export PYTHONUNBUFFERED=1
 export TOKENIZERS_PARALLELISM=false
 module load miniconda3/25.5.1
 eval "$(conda shell.bash hook)"
-conda activate "$AI6132_ROOT/env"
+conda activate "$AI6132_LTX_ENV"
 python "$AI6132_CODE/03-generation/ltx_video/run_cases.py" \
   --cases "$AI6132_CASES" --phase "$AI6132_PHASE" \
   --upstream "$AI6132_ROOT/LTX-Video" --assets "$AI6132_ROOT/ltx_assets" \

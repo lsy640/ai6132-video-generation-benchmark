@@ -2,7 +2,46 @@
 
 使用官方两阶段 I2V，首图条件为第 0 帧，关闭提示词扩写。
 
-2026-11-14 已在 TC2 L40S 上完成一条合成环境测试：`768×432 / 121 帧 / 24 fps`，H.264 原片完整解码通过，时长约 5.04 秒。详见 [验证记录](../../02-pilot/tc2/VALIDATION.md)。共同试跑和正式生成待 A 提供数据后进行，参数由全组试跑后冻结。
+已收到 A 的 24 条统一数据，按新版要求使用 `--protocol shared24`：18 条目标 128 帧、6 条目标 512 帧，LTX 分别生成最近的合法帧数 **129 / 513**，保持 **768×432 / 24 fps**。
+
+2026-11-14，独立 `env-cu126` 已在 TC2 L40S 上通过 **513 帧和 129 帧各一条预检**，使用 PyTorch 2.6.0+cu126 / torchvision 0.21.0 / cuDNN 9.5.1。原权重、BF16 和两阶段 7+3 配置不变。正式 24 条作业 `54359` 已提交，尚未完成整批验收。
+
+此前旧 PyTorch 2.5.1+cu121 / cuDNN 9.1 的 513 帧尝试在 VAE 大 Conv3D 处回退并显存不足；该失败与最初 121 帧合成 smoke 均保留在 [验证记录](../../02-pilot/tc2/VALIDATION.md)。新环境的长、短片生成计时分别约 166.22 秒、13.16 秒，是单条观测，不是批次平均速度。
+
+## Shared24：直接使用 A 的原始 CSV
+
+字段为 `image_type,image_path,prompt,seed,frame_num`。`image_type` 原样保存为 `category`，图片文件名的 `01_` 至 `24_` 前缀作为 `case_id`。prompt、seed、行序及首图字节保持不变。
+
+正式批次读取全部 24 行，要求编号 01–24 各一次，帧数分布为 18 条 128、6 条 512；不按六类筛选，`--per-category` 不参与选择。
+
+| CSV `frame_num` / `target_frame_num` | 请求帧数 `requested_frame_num` | 24 fps 时长 |
+|---:|---:|---:|
+| 128 | 129 | 5.375 秒 |
+| 512 | 513 | 21.375 秒 |
+
+按最近的 `8n+1` 规则适配，每档只增加 1 帧。worker 逐条使用对应帧数，并检查实际解码的 `native_frames`。shared24 保持约定的尺寸和帧率；显式传入 `--num-frames` 会报参数冲突，避免覆盖 CSV。
+
+```bash
+# 在仓库根目录校验原清单；图片路径以CSV目录为基准。
+export AI6132_ROOT="${AI6132_ROOT:-$HOME/ai6132-c}"
+export AI6132_CODE="$PWD"
+export AI6132_CPU_ENV="$AI6132_ROOT/env"
+sbatch 02-pilot/tc2/run_cpu.sh validate-cases \
+  --cases /absolute/shared/wan22_vbench_i2v_24.csv --phase formal --protocol shared24
+
+# 正式批次使用已经通过长短预检的新环境。
+export AI6132_LTX_ENV="$AI6132_ROOT/env-cu126"
+export TORCH_CUDNN_V8_API_DISABLED=0
+sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/run_ltx.sh \
+  formal /absolute/shared/wan22_vbench_i2v_24.csv \
+  "$AI6132_ROOT/outputs/ltx-shared24" --protocol shared24
+```
+
+技术预检可用保留原始字段及内容的 1 行子清单配合 `--phase smoke`，或 3 行子清单配合 `--phase pilot`，各用独立输出目录。从正式数据抽出的预检样本，不算额外的独立共同校准样本。
+
+协议、每条目标帧数和请求帧数都写入冻结记录。改协议、帧数或清单后不能续接同一批次。正式生成保留原片和失败记录，按固定种子每条生成一次。
+
+不传 `--protocol` 时仍使用 `legacy`，保留下文的原始六类方案和默认 121 帧行为。
 
 ## 环境与权重
 
@@ -19,6 +58,8 @@ sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/install_ltx.sh
 
 `prepare_environment.sh` 固定官方 commit `50f0aef1297574a4b29acbdb874e3a363a6d5f2e`，安装 torch 2.5.1 / torchvision 0.20.1 的 cu121 构建。`constraints.txt` 中的依赖组合已在 Python 3.10.22、L40S / 驱动 570.148.08 环境通过依赖、导入、CUDA/BF16 和生成检查。每批输出同时保存实际安装版本。
 
+长视频运行环境通过 `bootstrap_cu126.sh` 克隆基础 `env`，保留其他依赖后升级运行库；旧环境不变，也不在新环境重跑固定 2.5.1 的安装脚本或 constraints。`run_ltx.sh` 支持 `AI6132_LTX_ENV` 指向 `env-cu126`。安装与单行长片预检命令见 [TC2 长视频环境说明](../../02-pilot/tc2/README.md#长视频运行环境已通过预检)。这次调整不改变官方推理源码、模型或生成参数。
+
 下载固定 Hugging Face revision，并保存每个文件的 SHA256：
 
 | 内容 | 仓库及 revision |
@@ -28,7 +69,7 @@ sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/install_ltx.sh
 
 推理使用本地权重，Hugging Face 设为离线模式。保留官方两阶段 7+3 个 timesteps、BF16、CFG=1、STG=0，设置 `prompt_enhancement_words_threshold=0` 关闭扩写。
 
-## 共享样本清单
+## Legacy 共享样本清单
 
 由 A 冻结 `cases.csv` 和横版首图。清单格式示例：
 
@@ -48,7 +89,7 @@ sbatch 02-pilot/tc2/run_cpu.sh validate-cases \
   --cases /absolute/path/cases.csv --phase formal --per-category 2
 ```
 
-## Smoke、共同试跑、正式批次
+## Legacy 的 smoke、共同试跑、正式批次
 
 三个阶段各用独立输出目录：
 
@@ -72,13 +113,15 @@ sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/run_ltx.sh \
 
 代码哈希也在 `batch.json` 中冻结。升级 runner 后不能修改旧记录来绕过校验；保留旧输出，使用原代码续跑，或经小组确认后为新代码建立独立批次。只有旧版 attempt log 而没有 `selection.json` 时，单独读取记录不会猜测批次大小。
 
-试跑阶段可通过 `--width`、`--height`、`--num-frames`、`--frame-rate` 调整配置，正式运行时锁定参数。官方代码只在 GPU 总显存小于 30 GiB 时启用 CPU offload，因此 48GB L40S 上记录为 requested=true、effective=false。
+legacy 试跑阶段可通过 `--width`、`--height`、`--num-frames`、`--frame-rate` 调整配置，正式运行时锁定参数；shared24 使用前述固定尺寸、帧率和逐行帧数。官方代码只在 GPU 总显存小于 30 GiB 时启用 CPU offload，因此 48GB L40S 上记录为 requested=true、effective=false。
 
 ## 输出与计时口径
 
 每个 case 的 `native/` 保存原始 MP4。全部帧可解码、尺寸/帧数/fps 符合请求且时长不少于 5 秒时记为 `success`；画面质量由后续评审判断。
 
 `runs.csv` 与 `selection.json` 一起交给 B，含 case/model ID、种子、版本、配置路径及哈希、原生规格、真实状态与失败原因、GPU/驱动、耗时和显存。`batch.json` 固定完整输入清单和图片哈希；`pipeline.json` 是实际配置；`environment.txt` 保存真实安装版本；每个已启动 case 有 `request.json`、`result.json`（中断时可能缺失）和 `inference.log`。
+
+`protocol`、`target_frame_num`、`requested_frame_num` 也会交付；实际帧数为 `native_frames`。未启动样本仍保留目标和请求值，实际帧数只有解码后才填写。
 
 每个样本在独立进程调用官方 `infer`。`elapsed_seconds` 包含本地权重加载、文本编码、两阶段生成和视频写盘，不含下载和后续解码检查。`worker_wall_seconds` 另含导入与解码验证。显存记录为 PyTorch 本进程的 peak allocated / peak reserved（MiB）。
 
@@ -90,6 +133,6 @@ sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/run_ltx.sh \
 sbatch 02-pilot/tc2/run_cpu.sh test
 ```
 
-测试使用合成数据，覆盖清单冻结、完整交付记录、扩批/续跑，以及人评素材与评分校验；不替代 GPU 共同试跑。历史 20 项测试结果见环境验证记录，修复后的验证结果另行记录。
+本次生成工具的 13 项 CPU 测试通过，覆盖 legacy、完整 24 行映射、逐 case 129/513 帧请求、参数冲突、冻结和续跑。CPU 测试使用合成数据；真实 GPU 长短片预检另见验证记录。
 
 官方依据：[仓库与安装](https://github.com/Lightricks/LTX-Video/tree/50f0aef1297574a4b29acbdb874e3a363a6d5f2e)、[2B 两阶段配置](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/configs/ltxv-2b-0.9.8-distilled.yaml)、[推理入口](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/ltx_video/inference.py)、[PyTorch 2.5.1 安装](https://pytorch.org/get-started/previous-versions/#v251)。

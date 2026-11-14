@@ -31,6 +31,29 @@ sbatch --partition=MGPU-TC2 --qos=normal /path/to/install_ltx.sh
 
 该作业安装固定上游代码及依赖，下载固定版本的 2B、upscaler 和 T5 资产，并保存完整环境导出。详见 [LTX-Video 安装与生成步骤](../../03-generation/ltx_video/README.md)。正式推理前须冻结模型版本与生成配置。
 
+## 长视频运行环境：已通过预检
+
+513 帧预检在旧环境（PyTorch 2.5.1+cu121 / cuDNN 9.1）完成去噪后，于 VAE 解码的大 Conv3D 处回退并发生显存不足。独立 `env-cu126` 已在 L40S 上通过 513 帧和 129 帧各一条预检，使用 PyTorch 2.6.0+cu126、torchvision 0.21.0 和 cuDNN 9.5.1。两次生成计时分别约 166.22 秒和 13.16 秒，属于单条观测，详见 [验证记录](VALIDATION.md)。
+
+正式 24 条作业 `54359` 已提交到 `formal-cu126-20261114`，尚未完成整批验收。
+
+`bootstrap_cu126.sh` 克隆已安装的基础环境，保留其余依赖，再升级 PyTorch 相关包，旧 `env` 保持不变。模型权重、BF16、两阶段配置、768×432、24 fps 和请求帧数不变。`prepare_environment.sh` 与原 `constraints.txt` 仍用于 2.5.1 基础环境，不在新环境中重跑，以免降级。
+
+以下为新部署示例；已有 `env-cu126` 时直接选择该环境，不重复创建。第二项等待安装成功，再用一条目标为 512 帧的原始数据行检查 513 帧输出；子清单保留 A 的字段、prompt 和 seed。
+
+```bash
+export AI6132_CODE="$PWD"
+export AI6132_LTX_ENV="$AI6132_ROOT/env-cu126"
+export TORCH_CUDNN_V8_API_DISABLED=0
+C_SETUP_JOB=$(sbatch --parsable --partition=MGPU-TC2 --qos=normal \
+  02-pilot/tc2/bootstrap_cu126.sh)
+sbatch --dependency="afterok:$C_SETUP_JOB" --partition=MGPU-TC2 --qos=normal \
+  02-pilot/tc2/run_ltx.sh smoke /absolute/shared/preflight-long-01.csv \
+  "$AI6132_ROOT/outputs/preflight-long-cu126-01" --protocol shared24
+```
+
+`run_ltx.sh` 通过 `AI6132_LTX_ENV` 选择环境，未设置时仍使用旧 `env`。新环境检查使用独立输出目录，保留此前失败的日志和记录。
+
 ## 完整流程检查与后续批次
 
 从仓库根目录提交 CPU 作业，建立合成环境检查输入（个人环境中需有 Pillow）：

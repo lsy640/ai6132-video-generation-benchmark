@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 import run_cases
-from common import read_cases, select_cases, write_json
+from common import nearest_ltx_frames, read_cases, select_cases, write_json
 
 
 class ProtocolTests(unittest.TestCase):
@@ -26,11 +26,33 @@ class ProtocolTests(unittest.TestCase):
                 writer.writerow({"case_id": f"case_{i}", "category": f"category_{i % 6}", alias: "image.png",
                                  "prompt": prompt, "seed": 100 + i})
 
+    def shared_manifest(self, count=24, frame_updates=None, include_legacy_fields=False):
+        categories = (["single-human"] * 3 + ["multiple-human"] * 3 +
+                      [label for label in ("animal", "transportation", "food", "plant", "other",
+                                          "architecture", "scenery", "indoor", "abstract") for _ in range(2)])
+        long_ids = {1, 4, 7, 9, 19, 23}
+        fields = ["image_type", "image_path", "prompt", "seed", "frame_num"]
+        if include_legacy_fields:
+            fields += ["case_id", "category"]
+        with self.csv.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=fields)
+            writer.writeheader()
+            for i in range(1, count + 1):
+                filename = f"{i:02d}_shared image.png"
+                (self.root / filename).write_bytes((self.root / "image.png").read_bytes())
+                row = {"image_type": categories[i - 1], "image_path": filename,
+                       "prompt": f"  Original, shared prompt {i}  ", "seed": 42,
+                       "frame_num": (frame_updates or {}).get(i, 512 if i in long_ids else 128)}
+                if include_legacy_fields:
+                    row.update(case_id=f"{i:02d}", category=categories[i - 1])
+                writer.writerow(row)
+
     def run_fixture(self, *, phase="smoke", failed=(), interrupted=(),
-                    per_category=2, mutate_during_asset_check=None, before_worker=None):
+                    per_category=2, protocol="legacy", extra_args=(),
+                    mutate_during_asset_check=None, before_worker=None):
         args = ["--cases", str(self.csv), "--phase", phase, "--upstream", str(self.root / "source"),
                 "--assets", str(self.root / "weights"), "--output", str(self.root / "result"),
-                "--per-category", str(per_category)]
+                "--per-category", str(per_category), "--protocol", protocol, *extra_args]
         calls = []
 
         def fake_worker(command, **kwargs):
@@ -173,6 +195,60 @@ class ProtocolTests(unittest.TestCase):
         status, resumed = self.run_fixture(phase="formal", per_category=4)
         self.assertEqual((status, len(resumed)), (1, 10))
         self.assertEqual(len(run_cases.records(output)), 24)
+
+    def test_shared24_selects_all_rows_and_maps_frame_counts_without_rewriting_inputs(self):
+        self.shared_manifest()
+        original_csv = self.csv.read_bytes()
+        original_image = (self.root / "01_shared image.png").read_bytes()
+        rows = read_cases(self.csv, protocol="shared24")
+        selected = select_cases(rows, "formal", 2, protocol="shared24")
+        self.assertEqual([row["case_id"] for row in selected], [f"{i:02d}" for i in range(1, 25)])
+        self.assertEqual(len({row["category"] for row in selected}), 11)
+        self.assertEqual(selected[0]["prompt"], "  Original, shared prompt 1  ")
+        self.assertTrue(all(row["seed"] == 42 for row in selected))
+        self.assertEqual([nearest_ltx_frames(n) for n in (128, 512)], [129, 513])
+        self.assertEqual(sum(row["requested_frame_num"] == 129 for row in rows), 18)
+        self.assertEqual(sum(row["requested_frame_num"] == 513 for row in rows), 6)
+        self.assertEqual(select_cases(rows, "formal", 4, protocol="shared24"), rows)
+        self.assertEqual(self.csv.read_bytes(), original_csv)
+        self.assertEqual((self.root / "01_shared image.png").read_bytes(), original_image)
+
+    def test_shared24_passes_each_case_frame_count_to_worker_and_exports_targets(self):
+        self.shared_manifest()
+        status, calls = self.run_fixture(phase="formal", protocol="shared24")
+        self.assertEqual((status, len(calls)), (0, 24))
+        for payload in calls:
+            expected = 513 if payload["case"]["case_id"] in {"01", "04", "07", "09", "19", "23"} else 129
+            self.assertEqual(payload["settings"]["num_frames"], expected)
+            self.assertEqual(payload["record"]["requested_frame_num"], expected)
+            self.assertEqual(payload["record"]["target_frame_num"], expected - 1)
+            self.assertEqual((payload["settings"]["width"], payload["settings"]["height"],
+                              payload["settings"]["frame_rate"]), (768, 432, 24))
+        with (self.root / "result/runs.csv").open() as stream:
+            rows = list(csv.DictReader(stream))
+        self.assertEqual(len(rows), 24)
+        self.assertEqual(rows[0]["protocol"], "shared24")
+        self.assertEqual((rows[0]["target_frame_num"], rows[0]["requested_frame_num"]), ("512", "513"))
+
+    def test_shared24_rejects_num_frames_override_and_wrong_distribution(self):
+        self.shared_manifest()
+        with self.assertRaisesRegex(ValueError, "conflicts"):
+            self.run_fixture(phase="formal", protocol="shared24", extra_args=["--num-frames", "129"])
+        self.shared_manifest(frame_updates={2: 512})
+        with self.assertRaisesRegex(ValueError, "18 rows of 128"):
+            self.run_fixture(phase="formal", protocol="shared24")
+        self.shared_manifest(count=23)
+        with self.assertRaisesRegex(ValueError, "IDs 01..24"):
+            self.run_fixture(phase="formal", protocol="shared24")
+
+    def test_shared24_freezes_protocol_and_per_case_frames(self):
+        self.shared_manifest(count=1, include_legacy_fields=True)
+        self.assertEqual(self.run_fixture(protocol="shared24")[0], 0)
+        with self.assertRaisesRegex(ValueError, "Frozen batch changed"):
+            self.run_fixture(protocol="legacy")
+        self.shared_manifest(count=1, frame_updates={1: 128}, include_legacy_fields=True)
+        with self.assertRaisesRegex(ValueError, "Frozen batch changed"):
+            self.run_fixture(protocol="shared24")
 
 
 if __name__ == "__main__":
