@@ -1,0 +1,163 @@
+{
+  "model_id": "meituan-longcat/LongCat-Video",
+  "revision": "03b55529b1d1d4045f5fbe14d65c8c6e8116b278",
+  "conversion": "Official inference uses torch.bfloat16; original F32 weights cast to BF16 without quantization.",
+  "files": {
+    "LICENSE": {
+      "original_bytes": 1063,
+      "original_sha256": "dfdbf36556065706ef8b26e5866acb85209b6465af0395578d38b63470e0bed0",
+      "bf16_bytes": 1063,
+      "bf16_sha256": "dfdbf36556065706ef8b26e5866acb85209b6465af0395578d38b63470e0bed0"
+    },
+    "config.json": {
+      "original_bytes": 37,
+      "original_sha256": "0121461c0aae6083e23217414ddfdd78c4ff4d088838e9c88c1f483b8c6cefd1",
+      "bf16_bytes": 37,
+      "bf16_sha256": "0121461c0aae6083e23217414ddfdd78c4ff4d088838e9c88c1f483b8c6cefd1"
+    },
+    "dit/config.json": {
+      "original_bytes": 593,
+      "original_sha256": "89860487de2587e230ac1b0413ba94dd16447b0688d9bdb8fabeb8d5e6228659",
+      "bf16_bytes": 593,
+      "bf16_sha256": "89860487de2587e230ac1b0413ba94dd16447b0688d9bdb8fabeb8d5e6228659"
+    },
+    "dit/diffusion_pytorch_model-00001-of-00006.safetensors": {
+      "original_bytes": 9932990440,
+      "original_sha256": "4a64ebfe319eaea7144a3e38acaf79e031736c254b53cd3d59643d5673444b7c",
+      "bf16_bytes": 4966505600,
+      "bf16_sha256": "48220c62a84a63781fd1ba55da96bc9027989903f19d005894cc0622b78565a0"
+    },
+    "dit/diffusion_pytorch_model-00002-of-00006.safetensors": {
+      "original_bytes": 9976452384,
+      "original_sha256": "711a92e5bb38be84508869d62f451e8a1cb14cd903faf34b8291b1b3e299bab7",
+      "bf16_bytes": 4988236200,
+      "bf16_sha256": "d731380d8f2c1a3a32e51314efc7139a89790ec4663c283f26e33e6b26d185ad"
+    },
+    "dit/diffusion_pytorch_model-00003-of-00006.safetensors": {
+      "original_bytes": 9955430184,
+      "original_sha256": "977b90558908fa725ff66995ac72993e4092e9c040092893766acd60ad8e086f",
+      "bf16_bytes": 4977724856,
+      "bf16_sha256": "3bdea2bd819a6ff24db3669b70edfa3183164dc21e8d79f38f13dcb00f3d3eae"
+    },
+    "dit/diffusion_pytorch_model-00004-of-00006.safetensors": {
+      "original_bytes": 9821179488,
+      "original_sha256": "902f38deacdb75d97639968c98a2b520d97d268cfde9698c55810ed26e9170e2",
+      "bf16_bytes": 4910599400,
+      "bf16_sha256": "9d3db91a27388f0af0688a81de6c2d15fddf4e9b7a608f31d0b7d01a536b4012"
+    },
+    "dit/diffusion_pytorch_model-00005-of-00006.safetensors": {
+      "original_bytes": 9925989240,
+      "original_sha256": "f3e7ef21120757e658d501fa70fa8db2af3ff95945de72c4904fbe5ccbe0050b",
+      "bf16_bytes": 4963004432,
+      "bf16_sha256": "f051431990ae6bb6c5edf2e3af3866419ae0e2cde005e1a2ccb6cfa1a861dea0"
+    },
+    "dit/diffusion_pytorch_model-00006-of-00006.safetensors": {
+      "original_bytes": 4712351112,
+      "original_sha256": "dac297b544a030ce961648994ea791f58bab0e3d722092ac8c11a1475b2f4989",
+      "bf16_bytes": 2356180280,
+      "bf16_sha256": "3d27942348f483e5574ef78c79857b3098eadd978f1b170f960995b6b7e83b6b"
+    },
+    "dit/diffusion_pytorch_model.safetensors.index.json": {
+      "original_bytes": 93772,
+      "original_sha256": "881a29e97a204be3c77f0ca97db78cc71a726357fc8a39d18d4da4b50bbb40d2",
+      "bf16_bytes": 93772,
+      "bf16_sha256": "5a44f695cad8a14e76b2132777c1371fae0bd2f3431c6694da2645b03368f546"
+    },
+    "lora/cfg_step_lora.safetensors": {
+      "original_bytes": 2523077984,
+      "original_sha256": "1a903b49d62571e343258211300668f4b8d375842388092781bd11e364ae65a9",
+      "bf16_bytes": 1261640520,
+      "bf16_sha256": "2426167be021ce822a2244dd388530ce19218656aee2b5d24341c77bc60c6c24"
+    },
+    "model_index.json": {
+      "original_bytes": 37,
+      "original_sha256": "0121461c0aae6083e23217414ddfdd78c4ff4d088838e9c88c1f483b8c6cefd1",
+      "bf16_bytes": 37,
+      "bf16_sha256": "0121461c0aae6083e23217414ddfdd78c4ff4d088838e9c88c1f483b8c6cefd1"
+    },
+    "scheduler/scheduler_config.json": {
+      "original_bytes": 201,
+      "original_sha256": "3bc8f1aa49f02f0ea23fe02f2c6a6a5a9c037c441a8345fd5938d0bcc61338e9",
+      "bf16_bytes": 201,
+      "bf16_sha256": "3bc8f1aa49f02f0ea23fe02f2c6a6a5a9c037c441a8345fd5938d0bcc61338e9"
+    },
+    "text_encoder/config.json": {
+      "original_bytes": 854,
+      "original_sha256": "4087b6192155a4643f6d29fd326c4610103130674011ef4d0a53f8bce5de967d",
+      "bf16_bytes": 854,
+      "bf16_sha256": "4087b6192155a4643f6d29fd326c4610103130674011ef4d0a53f8bce5de967d"
+    },
+    "text_encoder/model-00001-of-00005.safetensors": {
+      "original_bytes": 4972389712,
+      "original_sha256": "c0ef3a140898e228a3520c9adec60743d2e8e5b3d229651bb37f1a3921919f99",
+      "bf16_bytes": 2486195544,
+      "bf16_sha256": "2863364fb07003df7608262f74b8b9f93a81198e60937241797ef09b58ebb206"
+    },
+    "text_encoder/model-00002-of-00005.safetensors": {
+      "original_bytes": 4899225672,
+      "original_sha256": "481c7b2b39771c44df6dd8d13ee12ed072d731b4a650bd092885d4d52db229ad",
+      "bf16_bytes": 2449617008,
+      "bf16_sha256": "bf358c7611021c509dba23e096896f156d53a0f53f308b3e67fc27eecac13947"
+    },
+    "text_encoder/model-00003-of-00005.safetensors": {
+      "original_bytes": 4966309504,
+      "original_sha256": "f93148bcc04052a169e1e49bfcf6125df6cf9bf243cb9c627da75266cf8e35c3",
+      "bf16_bytes": 2483158688,
+      "bf16_sha256": "26177a7518cd592ca1644215d14794c2ea093838cfd1362bcfa3c2d259e81008"
+    },
+    "text_encoder/model-00004-of-00005.safetensors": {
+      "original_bytes": 4999880704,
+      "original_sha256": "a451792c739c05bca4606190cc2dd16731411bac03b4cf6aacc5767321f857c9",
+      "bf16_bytes": 2499944480,
+      "bf16_sha256": "07ead2ad28e0da849c0ca2563708fb3a2cf9fe19bdc83d64fa5acef3ac9fd94f"
+    },
+    "text_encoder/model-00005-of-00005.safetensors": {
+      "original_bytes": 2885866152,
+      "original_sha256": "7e76e18d224531b8197a46231cb53daf7f2f6ca707130252becf933026ac4eea",
+      "bf16_bytes": 1442935480,
+      "bf16_sha256": "0da9ee284e21d1406df708788db1d502d95d75f69faa25cd26151bf8829b7c5f"
+    },
+    "text_encoder/model.safetensors.index.json": {
+      "original_bytes": 22476,
+      "original_sha256": "8af791f24a6447aa30c95786f40adf23d3c9df97470d2f36159c8f1113f120b4",
+      "bf16_bytes": 22476,
+      "bf16_sha256": "40200aa11c724f0be0611c1468b3517eed2d5ac77bbc5b638baec55945b4f59f"
+    },
+    "tokenizer/special_tokens_map.json": {
+      "original_bytes": 7079,
+      "original_sha256": "456b58fd240a06c743a7c2cf8008bec501240d68ebd1fc4018ea569505fea270",
+      "bf16_bytes": 7079,
+      "bf16_sha256": "456b58fd240a06c743a7c2cf8008bec501240d68ebd1fc4018ea569505fea270"
+    },
+    "tokenizer/spiece.model": {
+      "original_bytes": 4548313,
+      "original_sha256": "e3909a67b780650b35cf529ac782ad2b6b26e6d1f849d3fbb6a872905f452458",
+      "bf16_bytes": 4548313,
+      "bf16_sha256": "e3909a67b780650b35cf529ac782ad2b6b26e6d1f849d3fbb6a872905f452458"
+    },
+    "tokenizer/tokenizer.json": {
+      "original_bytes": 16837459,
+      "original_sha256": "20a46ac256746594ed7e1e3ef733b83fbc5a6f0922aa7480eda961743de080ef",
+      "bf16_bytes": 16837459,
+      "bf16_sha256": "20a46ac256746594ed7e1e3ef733b83fbc5a6f0922aa7480eda961743de080ef"
+    },
+    "tokenizer/tokenizer_config.json": {
+      "original_bytes": 61758,
+      "original_sha256": "1d8d2a216bf8e70ac15b7ddcea566c4dd0433c024b39a58ca5e4c66bd78defbd",
+      "bf16_bytes": 61758,
+      "bf16_sha256": "1d8d2a216bf8e70ac15b7ddcea566c4dd0433c024b39a58ca5e4c66bd78defbd"
+    },
+    "vae/config.json": {
+      "original_bytes": 724,
+      "original_sha256": "f0c1cc1d7decb5badc384f54691746a27a9aeff49f7ebca974e583389342d527",
+      "bf16_bytes": 724,
+      "bf16_sha256": "f0c1cc1d7decb5badc384f54691746a27a9aeff49f7ebca974e583389342d527"
+    },
+    "vae/diffusion_pytorch_model.safetensors": {
+      "original_bytes": 507591892,
+      "original_sha256": "d6e524b3fffede1787a74e81b30976dce5400c4439ba64222168e607ed19e793",
+      "bf16_bytes": 253806966,
+      "bf16_sha256": "39ffe6326a57bbc7c8a704d862e482588e3affc858bdbfc123a91b5ac3a3a42a"
+    }
+  }
+}

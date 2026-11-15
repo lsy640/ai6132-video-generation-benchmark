@@ -99,7 +99,7 @@ sbatch 02-pilot/tc2/run_cpu.sh dataset --verify 01-dataset/cases.canonical.csv
 
 按下列顺序执行，各阶段使用独立输出目录并冻结输入、配置和版本：
 
-1. [Hunyuan 生成](03-generation/hunyuan_video/README.md)或 [LTX 13B 生成与批次交接](03-generation/ltx_video/README.md)。其余模型由相应成员交付同一规范的运行记录。
+1. [Hunyuan 生成](03-generation/hunyuan_video/README.md)、[LTX 13B 生成与批次交接](03-generation/ltx_video/README.md)或 [LongCat 生成与交接](03-generation/longcat_video/README.md)。各成员交付同一规范的运行记录。
 2. 汇总四模型输出，进行[全片验收、匿名副本制作与 VBench 评估](04-vbench-evaluation/README.md)。
 3. 按[人工盲评流程](05-human-evaluation/README.md)分发材料并收表；B 提交个人评分后开展 [Qwen 评估](06-vlm-evaluation/README.md)。
 4. 四份人评收齐后解盲，按 [PLAN.md](PLAN.md)整合结果与报告。
@@ -130,7 +130,8 @@ sbatch 02-pilot/tc2/run_cpu.sh test
 | LTX 2B 历史 | 24/24 原片通过独立验收；既有素材和评分保留在历史批次 |
 | 历史诊断评估 | Hunyuan＋LTX 2B 共 48 条视频，112/112 个 VBench 指标项、48/48 次 Qwen 整体及 48/48 次窗口评分成功；CPU 恢复导出与独立统计复核均通过，见 [VBench 结果范围](04-vbench-evaluation/README.md#当前验证状态)及 [Qwen 结果范围](06-vlm-evaluation/README.md#当前验证状态) |
 | 工具验证 | 仓库版本 64 项回归通过；包含本地诊断评估扩展的整合版本 70 项通过，分别对应作业 54638 / 54643 |
-| A、D 模型 | 本仓库尚无对应正式批次的独立验收记录；待核验生成配置及完整交付 |
+| D LongCat 生成 | 24/24技术生成完成，D本地完整解码及来源/哈希核验通过；B独立接收与协议例外确认待完成，见[生成与交接代码](03-generation/longcat_video/README.md)和[生成记录](02-pilot/tc2/longcat24-records/README.md) |
+| A 模型 | 本仓库尚无对应正式批次的独立验收记录；待核验生成配置及完整交付 |
 | 四模型正式评估 | 新 13B 质量评分、完整 96 条匿名评分包、四人独立评分、一致性分析及最终报告待完成 |
 
 当前尚无四模型完整质量比较结果。成员报告、工具回归与实际视频验收分别保留证据，生成及评估的详细状态以各阶段验收记录为准。
