@@ -2,7 +2,7 @@
 
 使用 BF16、官方两阶段 7+3 timesteps，第二阶段 `tone_map_compression_ratio=0.6`，首图条件为第 0 帧，关闭提示词扩写。模型 ID 为 `ltxv-13b-0.9.8-distilled`。
 
-2026-11-15 全组同意从 2B 改为 13B，使用同一规范清单重跑全部 24 条：18 条 129 帧、6 条 513 帧，均为 768×432 / 24 fps；原图、prompt、seed 和顺序不变。正式作业 **54620 已完成 24/24**，Slurm 耗时 30 分 27 秒，短片/长片生成均值为 **25.0237 / 206.1915 秒**。C 的 FFmpeg 与本地 PyAV 全片验收、输入和产物哈希检查通过；B 尚待接收，正式人工评分尚未完成。逐条数据见 [汇总 JSON](../../02-pilot/tc2/ltx13b-formal-summary.json)。旧 2B 作业 54359 的结果和 [PR #2](https://github.com/lsy640/ai6132-video-generation-benchmark/pull/2) 来源保留在 [C 批次报告](../../02-pilot/tc2/C_FORMAL_REPORT.md)。
+2026-11-15 全组同意从 2B 改为 13B，使用同一规范清单重跑全部 24 条：18 条 129 帧、6 条 513 帧，均为 768×432 / 24 fps；原图、prompt、seed 和顺序不变。正式作业 **54620 已完成 24/24**，Slurm 耗时 30 分 27 秒，短片/长片生成均值为 **25.0237 / 206.1915 秒**。C 的 FFmpeg 与本地 PyAV 验收通过后，B 以独立作业 **54638** 完成全部24条原片的完整解码、冻结输入、配置、源码凭据及视频哈希核验，均通过。新13B的VBench、Qwen及正式人工评分尚未完成。生成和接收工具已随 [PR #3](https://github.com/lsy640/ai6132-video-generation-benchmark/pull/3) 合并至main。逐条数据见 [汇总 JSON](../../02-pilot/tc2/ltx13b-formal-summary.json)。旧 2B 作业 54359 的结果和 [PR #2](https://github.com/lsy640/ai6132-video-generation-benchmark/pull/2) 来源保留在 [C 批次报告](../../02-pilot/tc2/C_FORMAL_REPORT.md)。
 
 ## 环境与权重
 
@@ -93,7 +93,7 @@ sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/run_ltx.sh \
 
 13B 批次 `formal-13b-20261115` 已通过 C 的技术验收，交接文件名为 `C_LTX13B_shared24_handoff_20261115.zip`：`delivery/` 含可搬移的 `runs.csv`、`native/` 原字节视频、配置和接收凭据；`raw/formal-13b-20261115/` 保留完整 batch/selection/request/result、源码凭据与日志；另含代码和证据。
 
-B 收到后核对交接包及凭据。可在收到的原始副本上重新提交完整 CPU 验收，保留原记录和视频：
+B 已完成独立接收，导出的规范记录与原视频字节一并保留。接收新副本时，可按下列方式重新提交完整 CPU 验收，保留原记录和视频：
 
 ```bash
 export AI6132_CODE="$PWD"
@@ -125,6 +125,6 @@ B 向 media 提供 `ltxv-13b-0.9.8-distilled=/absolute/received/delivery/runs.cs
 sbatch 02-pilot/tc2/run_cpu.sh test
 ```
 
-回归覆盖规范字段、全部24例与逐案例帧数、清单冻结、完整交付记录、续跑，以及人评素材与评分校验。2026-11-15 的 CPU 作业 54622 完成 **64 项回归**，另以 FFmpeg 完整解码正式 24 条；本地 PyAV 独立核验全部 5400 帧。验证结果见 [验证记录](../../02-pilot/tc2/VALIDATION.md)。
+回归覆盖规范字段、全部24例与逐案例帧数、清单冻结、完整交付记录、续跑，以及人评素材与评分校验。C 的CPU作业54622完成 **64项回归**、24条FFmpeg完整解码，本地PyAV核验5400帧；B独立作业54638再次通过64项回归，并对新13B、历史2B各24条完成实际接收验收。本地诊断扩展与PR代码整合后的作业54643通过70项，其中新增6项共享评估回归尚未随文档更新发布。历史与当前配置的技术记录见 [验证记录](../../02-pilot/tc2/VALIDATION.md)。
 
 官方依据：[仓库与安装](https://github.com/Lightricks/LTX-Video/tree/50f0aef1297574a4b29acbdb874e3a363a6d5f2e)、[13B 两阶段配置](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/configs/ltxv-13b-0.9.8-distilled.yaml)、[2B 历史配置](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/configs/ltxv-2b-0.9.8-distilled.yaml)、[推理入口](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/ltx_video/inference.py)、[PyTorch 版本安装](https://pytorch.org/get-started/previous-versions/)。
