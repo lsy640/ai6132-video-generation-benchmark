@@ -1,0 +1,57 @@
+{
+  "model_id": "meituan-longcat/LongCat-Video",
+  "model_revision": "03b55529b1d1d4045f5fbe14d65c8c6e8116b278",
+  "source_revision": "58eb336edc5c8c63389838727e40b8c18434e54e",
+  "seed": 42,
+  "resolution": "480p",
+  "num_inference_steps": 16,
+  "guidance_scale": 1.0,
+  "use_distill": true,
+  "native_fps": 15,
+  "cpu_offload_block_count": 40,
+  "share_identical_rope_frequency_cache": true,
+  "formal_evaluation": false,
+  "generation_mode": "single generate_i2v call; no continuation or frame interpolation",
+  "trial_id": "longcat16_full24_20261115/case_0007",
+  "source_case": "case_0007",
+  "case_id": "case_0007",
+  "category": "animal",
+  "prompt": "a giraffe walking in a field",
+  "source_frame_num": "512",
+  "num_frames": 513,
+  "image_relative_path": "input/shared24/dataset/07_a giraffe walking in a field.jpg",
+  "image_sha256": "fe258612c43ed644a3cf55cf57e3d93892e8e2707bc99b09b53ebafed4c57acc",
+  "status": "succeeded",
+  "started_utc": "2026-11-15T10:15:57.847473+00:00",
+  "slurm_job_id": "54703",
+  "stages": {
+    "encode": {
+      "elapsed_seconds": 8.011482521891594
+    },
+    "denoise": {
+      "elapsed_seconds": 3675.4418831169605
+    },
+    "decode": {
+      "elapsed_seconds": 54.162449094001204
+    }
+  },
+  "stage": "decode",
+  "native": {
+    "width": 832,
+    "height": 480,
+    "fps": 15.0,
+    "frames": 513,
+    "duration_seconds": 34.2,
+    "sha256": "20b99f3fb1a070a7f06d4b3151ec4acb30f0a477d5435c82c2337b6abe815758"
+  },
+  "evaluation": {
+    "width": 768,
+    "height": 432,
+    "fps": 12.0,
+    "frames": 410,
+    "duration_seconds": 34.166666666666664,
+    "sha256": "d0e045926255a07cf35a65561aac3f2c6cd4dda94df813aa528ca6e064f59f0c"
+  },
+  "ended_utc": "2026-11-15T11:18:20.849512+00:00",
+  "elapsed_seconds": 3743.0020613688976
+}

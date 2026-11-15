@@ -1,0 +1,36 @@
+{
+  "model_id": "longcat-video-480p-16step-distill",
+  "phase": "full24",
+  "case_ids": [
+    "case_0001",
+    "case_0002",
+    "case_0003",
+    "case_0004",
+    "case_0005",
+    "case_0006",
+    "case_0007",
+    "case_0008",
+    "case_0009",
+    "case_0010",
+    "case_0011",
+    "case_0012",
+    "case_0013",
+    "case_0014",
+    "case_0015",
+    "case_0016",
+    "case_0017",
+    "case_0018",
+    "case_0019",
+    "case_0020",
+    "case_0021",
+    "case_0022",
+    "case_0023",
+    "case_0024"
+  ],
+  "canonical_sha256": "cca2f33bcc1a73a9a81ffadc177f80da589ef33d4d22661266af294eea5bd278",
+  "exceptions": [
+    "Three independent common pilot cases were not completed.",
+    "case_0001 reuses the one completed identical-profile technical trial.",
+    "Source formal_evaluation=false is preserved; B/group acceptance is pending."
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "model_id": "meituan-longcat/LongCat-Video",
+  "model_revision": "03b55529b1d1d4045f5fbe14d65c8c6e8116b278",
+  "source_revision": "58eb336edc5c8c63389838727e40b8c18434e54e",
+  "seed": 42,
+  "resolution": "480p",
+  "num_inference_steps": 16,
+  "guidance_scale": 1.0,
+  "use_distill": true,
+  "native_fps": 15,
+  "cpu_offload_block_count": 0,
+  "share_identical_rope_frequency_cache": true,
+  "formal_evaluation": false,
+  "generation_mode": "single generate_i2v call; no continuation or frame interpolation",
+  "trial_id": "longcat16_full24_20261115/case_0011",
+  "source_case": "case_0011",
+  "case_id": "case_0011",
+  "category": "food",
+  "prompt": "a stack of pancakes covered in syrup and fruit",
+  "source_frame_num": "128",
+  "num_frames": 129,
+  "image_relative_path": "input/shared24/dataset/11_a stack of pancakes covered in syrup and fruit.jpg",
+  "image_sha256": "fe3483570997c494aaeb16830f94e771a02a42166cc8bbda9c0e1a539bb87f25",
+  "status": "succeeded",
+  "started_utc": "2026-11-15T07:44:25.654373+00:00",
+  "slurm_job_id": "54702",
+  "stages": {
+    "encode": {
+      "elapsed_seconds": 7.8838374260813
+    },
+    "denoise": {
+      "elapsed_seconds": 419.4977476319764
+    },
+    "decode": {
+      "elapsed_seconds": 16.63989397790283
+    }
+  },
+  "stage": "decode",
+  "native": {
+    "width": 832,
+    "height": 480,
+    "fps": 15.0,
+    "frames": 129,
+    "duration_seconds": 8.6,
+    "sha256": "076503ab2636709660dad9732f55dfb76bc5e753a5fe9f27c36645a998c7bf27"
+  },
+  "evaluation": {
+    "width": 768,
+    "height": 432,
+    "fps": 12.0,
+    "frames": 103,
+    "duration_seconds": 8.583333333333334,
+    "sha256": "185adb2bd26bad79b00818320190a2ac54f6ffa14325983929c2ca451426cd43"
+  },
+  "ended_utc": "2026-11-15T07:51:50.391215+00:00",
+  "elapsed_seconds": 444.73685968108475
+}

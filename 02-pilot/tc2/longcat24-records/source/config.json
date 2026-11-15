@@ -1,0 +1,83 @@
+{
+  "batch_id": "longcat16_full24_20261115",
+  "created_utc": "2026-11-15T06:58:38.156510+00:00",
+  "phase": "full24",
+  "profile": {
+    "model_id": "meituan-longcat/LongCat-Video",
+    "model_revision": "03b55529b1d1d4045f5fbe14d65c8c6e8116b278",
+    "source_revision": "58eb336edc5c8c63389838727e40b8c18434e54e",
+    "seed": 42,
+    "resolution": "480p",
+    "num_inference_steps": 16,
+    "guidance_scale": 1.0,
+    "use_distill": true,
+    "native_fps": 15,
+    "cpu_offload_block_count": 40,
+    "share_identical_rope_frequency_cache": true,
+    "formal_evaluation": false,
+    "generation_mode": "single generate_i2v call; no continuation or frame interpolation"
+  },
+  "remote_root": "/home/msai/mufan001/ai6132-longcat",
+  "input_root": "/home/msai/mufan001/ai6132-cogvideox/input/shared24",
+  "canonical_sha256": "cca2f33bcc1a73a9a81ffadc177f80da589ef33d4d22661266af294eea5bd278",
+  "receipt_sha256": "ce6796abf1d9de584ab57ae0079ee4a77a240e43c1826a6a4524b79f968136d2",
+  "short_order": [
+    "case_0002",
+    "case_0003",
+    "case_0005",
+    "case_0006",
+    "case_0008",
+    "case_0010",
+    "case_0011",
+    "case_0012",
+    "case_0013",
+    "case_0014",
+    "case_0015",
+    "case_0016",
+    "case_0017",
+    "case_0018",
+    "case_0020",
+    "case_0021",
+    "case_0022",
+    "case_0024"
+  ],
+  "long_order": [
+    "case_0001",
+    "case_0004",
+    "case_0007",
+    "case_0009",
+    "case_0019",
+    "case_0023"
+  ],
+  "reuse": {
+    "case_0001": "/home/msai/mufan001/ai6132-longcat/outputs/longcat480_distill16_case01_20261115_attempt04"
+  },
+  "memory": {
+    "short_offload_blocks": 0,
+    "long_offload_blocks": 40,
+    "oom_fallback_blocks": 40
+  },
+  "resource_attempt_limit": 2,
+  "quality_rerolls": false,
+  "case_timeout_seconds": {
+    "129": 1800,
+    "513": 7200
+  },
+  "orchestration": {
+    "method": "two Slurm allocations, finish wave afterany short wave",
+    "wave_order": [
+      "short",
+      "finish"
+    ],
+    "wall_per_wave": "06:00:00",
+    "max_submitted_jobs": 2,
+    "gpu_count": 1,
+    "client_required": false,
+    "source_preview_retained": true
+  },
+  "code_sha256": {
+    "engine.py": "3577f0c47ac8fdcc1b9b431aeb59bc25f2d973904b75085e8958bc691b47e134",
+    "wave.slurm": "bb2bad38cc79f0164c396dfc5ee475c0a4fb227194e53b5f31661a5661704313",
+    "worker.py": "4c7fd370fdd59b72f75413175e5a77c575d830282df3d3df2fcab04e366abeb3"
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "canonical_sha256": "cca2f33bcc1a73a9a81ffadc177f80da589ef33d4d22661266af294eea5bd278",
+  "source_batch_sha256": "e14e9370bab642e2043392f1ef3ce0b046aa55378ab59a6e7a4c9b8754f060fc",
+  "source_runs_sha256": "f8d6eba248e46b1a8c15a0ce0b61dfe907f9e7013a56f0d25e1f6f04cb413708",
+  "decoded": {
+    "case_0001": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0002": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0003": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0004": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0005": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0006": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0007": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0008": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0009": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0010": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0011": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0012": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0013": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0014": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0015": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0016": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0017": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0018": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0019": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0020": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0021": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0022": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0023": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0024": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    }
+  },
+  "model_id": "longcat-video-480p-16step-distill",
+  "status": "verified",
+  "decoder": "pyav",
+  "cases": 24,
+  "adapter_sha256": "d179eca812dcfdeb40371d8d9c8feb329157c827ecc3a23ae110400b280f5ee0",
+  "verification_scope": "member_D_local_verification; independent B intake pending"
+}

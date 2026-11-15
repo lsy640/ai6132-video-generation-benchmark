@@ -1,0 +1,57 @@
+{
+  "model_id": "meituan-longcat/LongCat-Video",
+  "model_revision": "03b55529b1d1d4045f5fbe14d65c8c6e8116b278",
+  "source_revision": "58eb336edc5c8c63389838727e40b8c18434e54e",
+  "seed": 42,
+  "resolution": "480p",
+  "num_inference_steps": 16,
+  "guidance_scale": 1.0,
+  "use_distill": true,
+  "native_fps": 15,
+  "cpu_offload_block_count": 0,
+  "share_identical_rope_frequency_cache": true,
+  "formal_evaluation": false,
+  "generation_mode": "single generate_i2v call; no continuation or frame interpolation",
+  "trial_id": "longcat16_full24_20261115/case_0013",
+  "source_case": "case_0013",
+  "case_id": "case_0013",
+  "category": "plant",
+  "prompt": "a dandelion blowing in the wind",
+  "source_frame_num": "128",
+  "num_frames": 129,
+  "image_relative_path": "input/shared24/dataset/13_a dandelion blowing in the wind.jpg",
+  "image_sha256": "08e8003b4a9d0ce980b9f9b9dadcac9c11255d8e9ff7c04f1176256ed032e5ea",
+  "status": "succeeded",
+  "started_utc": "2026-11-15T07:59:15.487651+00:00",
+  "slurm_job_id": "54702",
+  "stages": {
+    "encode": {
+      "elapsed_seconds": 7.954643026925623
+    },
+    "denoise": {
+      "elapsed_seconds": 420.31721150688827
+    },
+    "decode": {
+      "elapsed_seconds": 17.13910554489121
+    }
+  },
+  "stage": "decode",
+  "native": {
+    "width": 832,
+    "height": 480,
+    "fps": 15.0,
+    "frames": 129,
+    "duration_seconds": 8.6,
+    "sha256": "65c13e6c932df10a0ad87813835d1f9fbe714823ed4e68500836b2a651186a30"
+  },
+  "evaluation": {
+    "width": 768,
+    "height": 432,
+    "fps": 12.0,
+    "frames": 103,
+    "duration_seconds": 8.583333333333334,
+    "sha256": "511a8323355461c25f206bef0ac134bb94ac0d3f309eafbc9ca3399fd6711b5d"
+  },
+  "ended_utc": "2026-11-15T08:06:41.625278+00:00",
+  "elapsed_seconds": 446.13764549396
+}

@@ -1,0 +1,24 @@
+TMA benchmarks will be running with experimental grid constant TMA descriptor.
+[rank 0] init_device_mesh [dp_size x cp_size]: [1 x 1]
+[rank 0] mesh_2d: DeviceMesh('cuda', [[0]], mesh_dim_names=('dp', 'cp'))
+[rank 0] [dp_rank, cp_rank]: [0, 0],  dp_ranks: [0], cp_ranks: [0]
+Loading checkpoint shards:   0%|          | 0/6 [00:00<?, ?it/s]Loading checkpoint shards:  17%|█▋        | 1/6 [00:01<00:05,  1.08s/it]Loading checkpoint shards:  33%|███▎      | 2/6 [00:01<00:03,  1.13it/s]Loading checkpoint shards:  50%|█████     | 3/6 [00:02<00:02,  1.21it/s]Loading checkpoint shards:  67%|██████▋   | 4/6 [00:03<00:01,  1.23it/s]Loading checkpoint shards:  83%|████████▎ | 5/6 [00:04<00:00,  1.25it/s]Loading checkpoint shards: 100%|██████████| 6/6 [00:04<00:00,  1.53it/s]Loading checkpoint shards: 100%|██████████| 6/6 [00:04<00:00,  1.33it/s]
+create LoRA network. base dim (rank): 128, alpha: 64
+create LoRA for model: 336 modules.
+Denoising:   0%|          | 0/16 [00:00<?, ?it/s]STEP {"utc": "2026-11-15T09:06:56.727238+00:00", "step": 1, "total_steps": 16, "seconds": 25.05252210702747, "elapsed_seconds": 25.384584052022547, "peak_gpu_gib": 34.65191459655762}
+Denoising:   6%|▋         | 1/16 [00:25<06:15, 25.06s/it]STEP {"utc": "2026-11-15T09:07:21.916936+00:00", "step": 2, "total_steps": 16, "seconds": 25.186103906016797, "elapsed_seconds": 50.574273108970374, "peak_gpu_gib": 34.664188385009766}
+Denoising:  12%|█▎        | 2/16 [00:50<05:51, 25.13s/it]STEP {"utc": "2026-11-15T09:07:47.121641+00:00", "step": 3, "total_steps": 16, "seconds": 25.201156587107107, "elapsed_seconds": 75.77896672696806, "peak_gpu_gib": 34.664188385009766}
+Denoising:  19%|█▉        | 3/16 [01:15<05:27, 25.17s/it]STEP {"utc": "2026-11-15T09:08:12.362682+00:00", "step": 4, "total_steps": 16, "seconds": 25.238959525013342, "elapsed_seconds": 101.02002533595078, "peak_gpu_gib": 34.664188385009766}
+Denoising:  25%|██▌       | 4/16 [01:40<05:02, 25.20s/it]STEP {"utc": "2026-11-15T09:08:37.618510+00:00", "step": 5, "total_steps": 16, "seconds": 25.25317211006768, "elapsed_seconds": 126.27584863989614, "peak_gpu_gib": 34.664188385009766}
+Denoising:  31%|███▏      | 5/16 [02:05<04:37, 25.22s/it]STEP {"utc": "2026-11-15T09:09:02.904681+00:00", "step": 6, "total_steps": 16, "seconds": 25.28316784882918, "elapsed_seconds": 151.56200818298385, "peak_gpu_gib": 34.664188385009766}
+Denoising:  38%|███▊      | 6/16 [02:31<04:12, 25.24s/it]STEP {"utc": "2026-11-15T09:09:28.204079+00:00", "step": 7, "total_steps": 16, "seconds": 25.297067758161575, "elapsed_seconds": 176.86141496896744, "peak_gpu_gib": 34.664188385009766}
+Denoising:  44%|████▍     | 7/16 [02:56<03:47, 25.26s/it]STEP {"utc": "2026-11-15T09:09:53.414812+00:00", "step": 8, "total_steps": 16, "seconds": 25.208190303994343, "elapsed_seconds": 202.07213889900595, "peak_gpu_gib": 34.664188385009766}
+Denoising:  50%|█████     | 8/16 [03:21<03:21, 25.24s/it]STEP {"utc": "2026-11-15T09:10:18.650434+00:00", "step": 9, "total_steps": 16, "seconds": 25.23244833899662, "elapsed_seconds": 227.30777574004605, "peak_gpu_gib": 34.664188385009766}
+Denoising:  56%|█████▋    | 9/16 [03:46<02:56, 25.24s/it]STEP {"utc": "2026-11-15T09:10:43.856772+00:00", "step": 10, "total_steps": 16, "seconds": 25.20374179095961, "elapsed_seconds": 252.5141009420622, "peak_gpu_gib": 34.664188385009766}
+Denoising:  62%|██████▎   | 10/16 [04:12<02:31, 25.23s/it]STEP {"utc": "2026-11-15T09:11:09.051951+00:00", "step": 11, "total_steps": 16, "seconds": 25.19286092207767, "elapsed_seconds": 277.70928759593517, "peak_gpu_gib": 34.664188385009766}
+Denoising:  69%|██████▉   | 11/16 [04:37<02:06, 25.22s/it]STEP {"utc": "2026-11-15T09:11:34.260041+00:00", "step": 12, "total_steps": 16, "seconds": 25.204839069163427, "elapsed_seconds": 302.9173686930444, "peak_gpu_gib": 34.664188385009766}
+Denoising:  75%|███████▌  | 12/16 [05:02<01:40, 25.22s/it]STEP {"utc": "2026-11-15T09:11:59.443238+00:00", "step": 13, "total_steps": 16, "seconds": 25.181242289952934, "elapsed_seconds": 328.1005737129599, "peak_gpu_gib": 34.664188385009766}
+Denoising:  81%|████████▏ | 13/16 [05:27<01:15, 25.21s/it]STEP {"utc": "2026-11-15T09:12:24.627927+00:00", "step": 14, "total_steps": 16, "seconds": 25.18214612081647, "elapsed_seconds": 353.2852603979409, "peak_gpu_gib": 34.664188385009766}
+Denoising:  88%|████████▊ | 14/16 [05:52<00:50, 25.20s/it]STEP {"utc": "2026-11-15T09:12:49.795243+00:00", "step": 15, "total_steps": 16, "seconds": 25.1641014800407, "elapsed_seconds": 378.4525780219119, "peak_gpu_gib": 34.664188385009766}
+Denoising:  94%|█████████▍| 15/16 [06:18<00:25, 25.19s/it]STEP {"utc": "2026-11-15T09:13:14.949553+00:00", "step": 16, "total_steps": 16, "seconds": 25.152270092861727, "elapsed_seconds": 403.60689014103264, "peak_gpu_gib": 34.664188385009766}
+Denoising: 100%|██████████| 16/16 [06:43<00:00, 25.18s/it]Denoising: 100%|██████████| 16/16 [06:43<00:00, 25.20s/it]
