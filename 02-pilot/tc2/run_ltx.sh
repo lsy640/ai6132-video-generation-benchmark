@@ -24,11 +24,19 @@ shift 3
 AI6132_ROOT="${AI6132_ROOT:-$HOME/ai6132-c}"
 AI6132_CODE="${AI6132_CODE:-$AI6132_ROOT/code}"
 AI6132_LTX_ENV="${AI6132_LTX_ENV:-$AI6132_ROOT/env-cu126}"
+AI6132_LTX_ASSETS="${AI6132_LTX_ASSETS:-$AI6132_ROOT/ltx_assets_13b}"
+AI6132_NODE="$(hostname -s)"
+if ! scontrol show hostnames "${SLURM_JOB_NODELIST:?}" | sed 's/\..*//' | grep -Fxq "$AI6132_NODE"; then
+  printf 'Run this script on its allocated compute node.\n' >&2
+  exit 2
+fi
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
 export MKL_NUM_THREADS="$OMP_NUM_THREADS"
 export OPENBLAS_NUM_THREADS="$OMP_NUM_THREADS"
 export HF_HOME="$AI6132_ROOT/hf-cache"
 export PYTHONUNBUFFERED=1
+export PYTHONUTF8=1
+export PYTHONDONTWRITEBYTECODE=1
 export TOKENIZERS_PARALLELISM=false
 export TORCH_CUDNN_V8_API_DISABLED="${TORCH_CUDNN_V8_API_DISABLED:-0}"
 module load miniconda3/25.5.1
@@ -38,5 +46,5 @@ conda activate "$AI6132_LTX_ENV"
 set -u
 python "$AI6132_CODE/03-generation/ltx_video/run_cases.py" \
   --cases "$AI6132_CASES" --phase "$AI6132_PHASE" \
-  --upstream "$AI6132_ROOT/LTX-Video" --assets "$AI6132_ROOT/ltx_assets" \
+  --upstream "$AI6132_ROOT/LTX-Video" --assets "$AI6132_LTX_ASSETS" \
   --output "$AI6132_OUTPUT" --offload-to-cpu "$@"

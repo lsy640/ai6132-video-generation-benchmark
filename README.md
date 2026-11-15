@@ -32,10 +32,12 @@ case_id,category,image_path,prompt,seed,source_frame_num,target_frames
 | --- | --- | --- |
 | A | Wan2.2-TI2V-5B | 准备并冻结公共数据与输入清单 |
 | B | HunyuanVideo-1.5-480P-I2V-step-distill | 汇总生成记录、制作匿名评分副本、运行 VBench-I2V 与 Qwen3-VL |
-| C | LTX-Video 2B v0.9.8 Distilled | 准备评分材料、随机观看顺序与收表校验 |
+| C | LTX-Video 13B v0.9.8 Distilled | 准备评分材料、随机观看顺序与收表校验 |
 | D | LongCat-Video；备选 CogVideoX1.5-5B-I2V | 整合结果、计算一致性并完成报告 |
 
 第四模型依据共同试跑结果冻结。各模型的步数、精度、卸载配置和备选规则见 [PLAN.md](PLAN.md)；所有成员均参与四模型的人工评审。
+
+2026-11-15 全组同意将 C 的 LTX 从 2B 改为 13B，使用 BF16、官方两阶段 7+3 timesteps、第二阶段 tone map compression ratio 0.6，关闭提示词扩写。全部 24 例在新批次重跑，公共输入、长短分配及 768×432 / 24 fps 不变。旧 2B 批次与 PR #2 结果保留为历史；新 13B 结果单独交接和评估。
 
 ## 评估方法
 
@@ -93,12 +95,14 @@ sbatch 02-pilot/tc2/run_cpu.sh dataset --verify 01-dataset/cases.canonical.csv
 
 按下列顺序执行，各阶段使用独立输出目录并冻结输入、配置和版本：
 
-1. [Hunyuan 生成](03-generation/hunyuan_video/README.md)或 [LTX 生成与已完成批次交接](03-generation/ltx_video/README.md)。其余模型由相应成员交付同一规范的运行记录。
+1. [Hunyuan 生成](03-generation/hunyuan_video/README.md)或 [LTX 13B 生成与批次交接](03-generation/ltx_video/README.md)。其余模型由相应成员交付同一规范的运行记录。
 2. 汇总四模型输出，进行[全片验收、匿名副本制作与 VBench 评估](04-vbench-evaluation/README.md)。
 3. 按[人工盲评流程](05-human-evaluation/README.md)分发材料并收表；B 提交个人评分后开展 [Qwen 评估](06-vlm-evaluation/README.md)。
 4. 四份人评收齐后解盲，按 [PLAN.md](PLAN.md)整合结果与报告。
 
 常规共同试跑使用独立的三个长短案例。本次 B 正式生成按明确指示跳过生成试跑，该例外已写入冻结记录；后续阶段仍执行各自的验收要求。
+
+C 的 13B 修订已完成 case_0001 的 129/513 帧技术试跑，按全组决定直接重跑正式 24 例；未另行完成三个独立共同试跑样本。B 验收新原片后，以 `ltxv-13b-0.9.8-distilled` 新建全片评分副本、匿名评分包及 VBench/Qwen 批次。已有 2B 素材和评分保留在旧批次，替换视频重新评价；人评工具和量表继续使用。
 
 ### 4. 运行测试
 
@@ -112,17 +116,20 @@ sbatch 02-pilot/tc2/run_cpu.sh test
 
 ## 当前进度
 
-截至 **2026-11-14**：
+截至 **2026-11-15**；B 的进度沿用 11 月 14 日记录：
 
 | 阶段 | 状态与证据范围 |
 | --- | --- |
 | 公共输入 | 24 例、11 类规范清单及图片校验已完成 |
-| LTX 生成 | C 报告 24/24 完成；代码已合入 main，实际视频与原始凭据待交接后独立验收，见 [C 批次报告](02-pilot/tc2/C_FORMAL_REPORT.md) |
+| LTX 13B 生成 | 正式作业 54620 完成 24/24，30 分 27 秒；短片/长片生成均值 25.0237 / 206.1915 秒。C 完成 FFmpeg 与本地 PyAV 全片验收，B 待接收，见 [C 批次报告](02-pilot/tc2/C_FORMAL_REPORT.md)及[逐条统计与哈希](02-pilot/tc2/ltx13b-formal-summary.json) |
+| LTX 2B 历史 | PR #2 报告 24/24 完成；原始实验数字与交接记录保留，不计作 13B 结果 |
 | Hunyuan 生成 | 正式批次进行中，已有 129 帧与 513 帧成功记录；整批 24 例独立全片验收尚未完成 |
-| 工具验证 | 最新 52 项回归测试全部通过，见 [验收记录](02-pilot/tc2/VALIDATION.md) |
+| 工具验证 | CPU 作业 54622 完成 64 项回归及 24 条 FFmpeg 完整解码；本地 PyAV 独立验收 24 条 / 5400 帧，见 [验收记录](02-pilot/tc2/VALIDATION.md) |
 | 正式评估与报告 | VBench、Qwen 和人工盲评工具已实现；全组正式评分、统计分析和最终报告待完成 |
 
 当前尚无四模型完整质量比较结果。成员报告、工具回归与实际视频验收分别保留证据，生成及评估的详细状态以各阶段验收记录为准。
+
+C 的交接文件名为 `C_LTX13B_shared24_handoff_20261115.zip`，包含可搬移的 `delivery/runs.csv` 与原片、完整原始记录、代码及验收证据。B 收到并复核后使用新 13B 输入进行后续评估，正式人工评分尚未完成。
 
 ## 复现与产物管理
 

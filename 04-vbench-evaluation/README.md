@@ -4,6 +4,8 @@
 
 全组冻结输出后，提供恰好四个不同 `MODEL_ID=RUNS.csv`，model ID必须与对应CSV一致。统一输入字段至少为 case_id/model_id/seed/status/weight_version/config，成功项还需native_video；原始CSV独立保存。其他成员使用不同字段时须显式转换，不自动猜测。缺失交付、未启动、中断均保留；原片有效而转换失败会暂停任务，不伪装成模型失败。
 
+2026-11-15 全组同意 C 改用 `ltxv-13b-0.9.8-distilled`，同一 24 例已重跑并通过 C 的完整技术验收，见[逐条统计与哈希](../02-pilot/tc2/ltx13b-formal-summary.json)。B 尚待接收；复核后以交接包的 `delivery/runs.csv` 为 C 模型输入，在新目录建立全片副本、匿名映射和 VBench 批次。若已有 2B 副本或指标，保留为历史，不改模型标签或继承旧分数。其余三模型保持原输入，仍为四模型共 96 条，原图、prompt、seed、长短分配不变。
+
 ```bash
 export AI6132_CPU_ENV=/absolute/personal/cpu/environment
 sbatch 02-pilot/tc2/run_cpu.sh media --cases 01-dataset/cases.canonical.csv \

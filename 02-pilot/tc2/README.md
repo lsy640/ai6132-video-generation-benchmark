@@ -29,13 +29,15 @@ sbatch --partition=MGPU-TC2 --qos=normal /path/to/bootstrap_env.sh
 sbatch --partition=MGPU-TC2 --qos=normal /path/to/install_ltx.sh
 ```
 
-该作业安装固定上游代码及依赖，下载固定版本的 2B、upscaler 和 T5 资产，并保存完整环境导出。详见 [LTX-Video 安装与生成步骤](../../03-generation/ltx_video/README.md)。正式推理前须冻结模型版本与生成配置。
+该作业安装固定上游代码及依赖，下载固定版本的 13B、upscaler 和 T5 资产，并保存完整环境导出。当前资产目录默认为 `$AI6132_ROOT/ltx_assets_13b`，也可通过 `AI6132_LTX_ASSETS` 指定；旧 2B 目录保留。下载前核对 Home 空间。详见 [LTX-Video 安装与生成步骤](../../03-generation/ltx_video/README.md)。
 
 ## 完整流程检查与后续批次
 
-C 已在 PR #2 报告完成cu126环境下的24条正式视频，原始报告及独立复核边界见 [C 正式批次报告](C_FORMAL_REPORT.md)。旧cu121环境在513帧VAE解码失败，当前 `run_ltx.sh` 默认激活 `AI6132_LTX_ENV=${AI6132_ROOT}/env-cu126`；可显式选择其他已验证环境。
+2026-11-15 全组同意将 C 改为 13B v0.9.8 Distilled，并在新目录重跑同一规范清单的全部 24 例。BF16、官方 7+3 timesteps、第二阶段 tone map compression ratio 0.6、关闭提示词扩写，18×129＋6×513 帧及 768×432 / 24 fps 固定。正式作业 **54620 已完成 24/24，COMPLETED / 0:0 / 30 分 27 秒**；CPU 作业 54622 的 64 项回归及 24 条 FFmpeg 全片验收通过，本地 PyAV 再次完整解码 5400 帧。当前为 C 的技术验收，B 尚待接收，正式人工评分待完成。详见 [汇总 JSON](ltx13b-formal-summary.json)与[C 批次报告](C_FORMAL_REPORT.md)，其中保留旧 2B 作业 54359 及 PR #2 历史。
 
-在基础环境和LTX安装成功后，查询配额并提交 `sbatch 02-pilot/tc2/bootstrap_cu126.sh` 创建独立cu126环境。脚本默认MGPU-TC2/normal、1节点、8CPU、28G、1GPU、1小时，无节点绑定；安装前检查Home用量、克隆体积和12GB升级缓存预留。已有环境时不重复安装，也不在其中重跑旧constraints。Conda hook与activate均保护nounset，启用cuDNN v8 API路径。正式生成仍保持原权重、BF16与官方两阶段配置。
+旧 cu121 环境在 2B 513 帧 VAE 解码失败；当前 `run_ltx.sh` 默认激活 `AI6132_LTX_ENV=${AI6132_ROOT}/env-cu126`。在基础环境和 LTX 安装成功后，查询配额并提交 `sbatch 02-pilot/tc2/bootstrap_cu126.sh` 创建独立 cu126 环境。脚本默认 MGPU-TC2/normal、1节点、8CPU、28G、1GPU、1小时，无节点绑定；安装前检查 Home 用量、克隆体积和 12GB 升级缓存预留。已有环境时直接复用，不在其中重跑旧 constraints。Conda hook 与 activate 均保护 nounset，启用 cuDNN v8 API 路径。
+
+13B 沿用 torch2.6.0+cu126 / cuDNN9.5.1。内存适配先缓存提示词编码后释放 T5，两阶段完成后释放 Transformer 再解码，实际 CPU offload 为 false。2B129 适配回归与旧基线 SHA256 一致；13B 正式短片/长片生成均值为 25.0237/206.1915 秒。此前 case_0001 的长短技术试跑分别为 40.5888/208.5975 秒，单列保存，不计入正式统计；本次未另行完成三个独立共同试跑样本。详细证据见 [验证记录](VALIDATION.md)。
 
 从仓库根目录提交 CPU 作业，建立合成环境检查输入（个人环境中需有 Pillow）：
 
@@ -58,7 +60,18 @@ sbatch --partition=MGPU-TC2 --qos=normal /path/to/run_ltx.sh \
   pilot /absolute/shared/pilot_cases.csv /absolute/artifacts/pilot
 ```
 
-当前A实际11类混合长度清单先经CPU适配，再提交 `formal /absolute/cases.canonical.csv /absolute/artifacts/formal-mixed`，默认使用全部24个案例和逐案例帧数。129/513帧须共同试跑验收。示例路径均需替换为实际路径。
+当前 A 的规范清单已冻结，正式入口默认使用全部 24 个案例和逐案例帧数。本次 13B 修订沿用上述 case_0001 长短技术试跑，按全组决定直接提交完整正式批次：
+
+```bash
+export AI6132_CODE="$PWD"
+export AI6132_LTX_ENV="$AI6132_ROOT/env-cu126"
+export AI6132_LTX_ASSETS="$AI6132_ROOT/ltx_assets_13b"
+sbatch --partition=MGPU-TC2 --qos=normal 02-pilot/tc2/run_ltx.sh \
+  formal "$AI6132_CODE/01-dataset/cases.canonical.csv" \
+  "$AI6132_ROOT/outputs/ltx13b-formal-20261115"
+```
+
+新模型使用独立输出目录；旧 2B 冻结记录不覆盖、不混入 13B 统计。示例路径需替换为实际路径。
 
 ## 作业状态
 
@@ -86,7 +99,7 @@ sbatch 02-pilot/tc2/run_cpu.sh test
 
 人评参数示例见 [人评说明](../../05-human-evaluation/README.md)。日志写入提交目录的 `ai6132_cpu_<jobid>.out` 和 `.err`。这些 CPU 任务无需 checkpoint、训练恢复、signal 或后继作业；测试中出现的模拟中断日志不代表真实推理失败。
 
-新增CPU子命令：dataset（适配/验证原始清单）、assets（已下载资产的revision/SHA256凭据）、media（完整时长匿名交接）、vbench-cache（缓存凭据）、import-ltx（完整解码接收C的已完成24条并派生规范清单）。详见各阶段README。test也覆盖共享工具回归；完整CPU套件除Pillow外需要可用FFmpeg/ffprobe。
+新增CPU子命令：dataset（适配/验证原始清单）、assets（已下载资产的revision/SHA256凭据）、media（完整时长匿名交接）、vbench-cache（缓存凭据）、import-ltx（完整解码接收 C 的完整 24 条，支持新 13B 规范批次与历史 2B Shared24）。B 验收新 13B 后重新建立评分副本、匿名材料及 VBench/Qwen 批次；旧 2B 结果单独保留。详见各阶段 README。test 也覆盖共享工具回归；完整 CPU 套件除 Pillow 外需要可用 FFmpeg/ffprobe。
 
 B的生成与评估统一通过 `run_b_gpu.sh hunyuan|vbench|qwen`，显式设置个人 `AI6132_GPU_ENV`。默认MGPU-TC2/normal、1node、4CPU、28G、1GPU、2小时，无节点绑定；提交前重新查询资源与配额。stdout/stderr为提交目录的ai6132_b_JOBID.out/.err。Hunyuan、VBench、Qwen按单GPU配额串行；CPU任务只有在总CPU/内存配额允许时并行。这里是推理批处理，不使用训练checkpoint或无限自动重提；逐案例/请求日志支持继续未启动项。
 

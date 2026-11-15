@@ -1,4 +1,6 @@
 #!/bin/bash
+#SBATCH --partition=MGPU-TC2
+#SBATCH --qos=normal
 #SBATCH --job-name=ai6132-c-install
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -16,15 +18,19 @@ if [ -z "${SLURM_JOB_ID:-}" ]; then
 fi
 AI6132_ROOT="${AI6132_ROOT:-$HOME/ai6132-c}"
 AI6132_CODE="${AI6132_CODE:-$AI6132_ROOT/code}"
+AI6132_LTX_ASSETS="${AI6132_LTX_ASSETS:-$AI6132_ROOT/ltx_assets_13b}"
 export CONDA_PKGS_DIRS="$AI6132_ROOT/conda-pkgs"
 export PIP_CACHE_DIR="$AI6132_ROOT/pip-cache"
 export HF_HOME="$AI6132_ROOT/hf-cache"
 export PYTHONUNBUFFERED=1
+export PYTHONUTF8=1
 module load miniconda3/25.5.1
+set +u
 eval "$(conda shell.bash hook)"
 conda activate "$AI6132_ROOT/env"
+set -u
 bash "$AI6132_CODE/03-generation/ltx_video/prepare_environment.sh" "$AI6132_ROOT/LTX-Video"
-python "$AI6132_CODE/03-generation/ltx_video/download_assets.py" --assets "$AI6132_ROOT/ltx_assets"
+python "$AI6132_CODE/03-generation/ltx_video/download_assets.py" --assets "$AI6132_LTX_ASSETS"
 mkdir -p "$AI6132_ROOT/environment"
 python -m pip freeze > "$AI6132_ROOT/environment/ltx-pip-freeze.txt"
 conda env export > "$AI6132_ROOT/environment/ltx-conda-env.yml"

@@ -2,6 +2,8 @@
 
 主协议见PLAN.md。短片整体32帧、长片整体128帧；长片另分四个实际等时窗各32帧。整体三维评分，分段仅首图保持/动作自然度，不把已在别段完成的动作判为提示词不遵循。96次整体＋96次窗口请求；窗口不当成独立案例或平均为主分。
 
+2026-11-15 C 的正式模型改为 `ltxv-13b-0.9.8-distilled`，同一 24 例已重跑并通过 C 的技术验收，见[批次凭据](../02-pilot/tc2/ltx13b-formal-summary.json)。B 验收新原片、生成新的完整时长匿名材料并提交对应个人评分后，为新材料建立独立 Qwen 批次；这些评估尚待执行。已有 2B 的回复与分数保留为历史，不能改标签或复用为 13B 结果；新批次的整体与窗口评分均重新生成。
+
 单独准备个人Qwen环境：支持Qwen3VLForConditionalGeneration的固定Transformers、Torch、qwen-vl-utils（官方当前示例为0.0.14）、Pillow、NumPy、FFmpeg/ffprobe。安装、依赖检查、权重下载和GPU检查均使用独立sbatch；不更改C环境。下载前检查个人配额，固定 Qwen/Qwen3-VL-8B-Instruct 的40位revision，运行时只加载本地safetensors，不自动下载、不默认量化。必须用assets CPU入口记录已固定来源的本地文件，生成根目录assets.json；推理会核对revision和全部文件哈希：
 
 ```bash

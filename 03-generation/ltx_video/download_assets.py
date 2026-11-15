@@ -3,7 +3,7 @@
 import argparse
 from pathlib import Path
 
-from common import (MODEL_REPO, MODEL_REVISION, TEXT_REPO, TEXT_REVISION,
+from common import (MODEL_ID, MODEL_REPO, MODEL_REVISION, TEXT_REPO, TEXT_REVISION,
                     WEIGHT_FILES, TEXT_FILES, digest, expected_assets, write_json)
 
 
@@ -20,7 +20,7 @@ def main():
     ):
         for name in names:
             hf_hub_download(repo_id=repo, revision=revision, filename=name, local_dir=root / folder)
-    manifest = {"model_repo": MODEL_REPO, "model_revision": MODEL_REVISION,
+    manifest = {"model_id": MODEL_ID, "model_repo": MODEL_REPO, "model_revision": MODEL_REVISION,
                 "text_repo": TEXT_REPO, "text_revision": TEXT_REVISION,
                 "files": {name: digest(root / name) for name in expected_assets()}}
     write_json(root / "assets.json", manifest)

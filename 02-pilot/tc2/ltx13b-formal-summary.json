@@ -1,0 +1,339 @@
+{
+  "schema_version": 1,
+  "batch_id": "formal-13b-20261115",
+  "model_id": "ltxv-13b-0.9.8-distilled",
+  "phase": "formal",
+  "generation_code_commit": "dbb4df37dec06fc4b388b0b3fbe717e4436abf8f",
+  "upstream_commit": "50f0aef1297574a4b29acbdb874e3a363a6d5f2e",
+  "model_revision": "8984fa25007f376c1a299016d0957a37a2f797bb",
+  "text_revision": "b89adadeccd9ead2adcb9fa2825d3fabec48d404",
+  "canonical_csv_sha256": "cca2f33bcc1a73a9a81ffadc177f80da589ef33d4d22661266af294eea5bd278",
+  "batch_sha256": "77b2c38aa4ff7bee92811472e28f954a8f27ebd9f548be9ec05f26c8d13ef08e",
+  "source_receipt_sha256": "24e7ee0a0bcf79e68975edee3b036dbbf12409e625d01f958180e85d1a5a906e",
+  "import_receipt_sha256": "52f3f085b5df5958aa35caa49fe40a53f2e75f6a0ee5985490bc2cb356c84225",
+  "portable_runs_sha256": "601e687dfa4fead33fe18618d29f63163691d9fa0200ff208bdfa041ab2674b9",
+  "local_verification_sha256": "5cd34ab3734d0115270d036d9d5be214e559d7bba5f3349d9b8d833dd304f8ea",
+  "source_hashes": {
+    "runner": "5f6a106205d0303464354b8f90b70043ebd94e6bfc1f0cc54a42f44490ce5ef6",
+    "common": "ff682e22d1c06e018d30e4b82369171c18901d05841b6cec07e6609817339f28",
+    "memory_adapter": "ef26651b6d78861db9331eca86a94d9ba31821ddc3f56d710d7418f8e44aad7a",
+    "dataset_contract": "a46df210864f184b1ead39cd8f6abacadac63beab6f5ed165c16bd9078f7fe5f",
+    "pipeline_template": "e4b1fa5d7eca333d50b989784be6cf05b21c02aa917dd3cf3d339616499cdd96"
+  },
+  "settings": {
+    "width": 768,
+    "height": 432,
+    "fps": 24,
+    "precision": "bfloat16",
+    "denoising_steps_per_stage": [
+      7,
+      3
+    ],
+    "prompt_enhancement": false,
+    "seed": 42,
+    "conditioning_strength": 1.0,
+    "image_cond_noise_scale": 0.15,
+    "conditioning_start_frame": 0,
+    "second_pass_tone_map_compression_ratio": 0.6,
+    "memory_strategy": "sequential_bf16_prompt_cache_final_transformer_release",
+    "cpu_offload_effective": false
+  },
+  "runtime": {
+    "gpu_model": "NVIDIA L40S",
+    "driver_version": "570.148.08",
+    "torch_version": "2.6.0+cu126",
+    "torch_cuda_version": "12.6",
+    "cudnn_version": 90501,
+    "python_version": "3.10.22"
+  },
+  "success": 24,
+  "failure": 0,
+  "not_started": 0,
+  "total_frames": 5400,
+  "groups": {
+    "129": {
+      "worker_wall_mean_seconds": 28.40006546282934,
+      "peak_reserved_mib": 30884.0,
+      "count": 18,
+      "mean_seconds": 25.023722967844353,
+      "median_seconds": 24.949715816997923,
+      "min_seconds": 24.02312066499144,
+      "max_seconds": 26.93117608106695,
+      "peak_allocated_mib": 30396.64599609375
+    },
+    "513": {
+      "worker_wall_mean_seconds": 210.1494514910349,
+      "peak_reserved_mib": 40824.0,
+      "count": 6,
+      "mean_seconds": 206.1914873215525,
+      "median_seconds": 205.5061854585074,
+      "min_seconds": 204.437042015139,
+      "max_seconds": 208.9136367160827,
+      "peak_allocated_mib": 37753.18701171875
+    }
+  },
+  "validation": {
+    "by": "C",
+    "full_ffmpeg_decode_videos": 24,
+    "full_local_pyav_decode_videos": 24,
+    "cpu_regressions": {
+      "ltx": 30,
+      "human_eval": 19,
+      "shared": 15,
+      "total": 64
+    },
+    "independent_B_intake_completed": false,
+    "human_quality_scores_generated": false
+  },
+  "timing_scope": "elapsed_seconds: weights/text encoding/two-pass generation/decode/write; worker_wall_seconds also includes process imports and full output decode. Queue time excluded.",
+  "slurm_jobs": {
+    "54619": {
+      "job_id": "54619",
+      "job_name": "c-ltx13b-24",
+      "state": "FAILED",
+      "exit_code": "1:0",
+      "elapsed": "00:00:03",
+      "started": "2026-11-15T12:26:57",
+      "ended": "2026-11-15T12:27:00",
+      "node": "TC2N07"
+    },
+    "54620": {
+      "job_id": "54620",
+      "job_name": "c-ltx13b-24",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed": "00:30:27",
+      "started": "2026-11-15T12:27:50",
+      "ended": "2026-11-15T12:58:17",
+      "node": "TC2N07"
+    },
+    "54622": {
+      "job_id": "54622",
+      "job_name": "c-ltx13b-intake",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed": "00:00:44",
+      "started": "2026-11-15T12:58:17",
+      "ended": "2026-11-15T12:59:01",
+      "node": "TC2N01"
+    }
+  },
+  "videos": [
+    {
+      "case_id": "case_0001",
+      "frames": 513,
+      "sha256": "8238ea3c5a4e3ed6cd0899697435cfb04c7ed1344200b8d0f1d280ee42a792a0",
+      "elapsed_seconds": 208.9136367160827,
+      "worker_wall_seconds": 213.55931639298797,
+      "peak_vram_allocated_mib": 37753.18701171875,
+      "peak_vram_reserved_mib": 40824.0
+    },
+    {
+      "case_id": "case_0002",
+      "frames": 129,
+      "sha256": "73ffeb1b1fb5f53b6877609214f755a26aabbe54a1c6cacdf5ea30cef5555c41",
+      "elapsed_seconds": 26.43827709998004,
+      "worker_wall_seconds": 30.18013595393859,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0003",
+      "frames": 129,
+      "sha256": "5307f63ee66ad839774666d4a22fc52b5ba2063d9caaaa71aec4a96c74e8f582",
+      "elapsed_seconds": 26.93117608106695,
+      "worker_wall_seconds": 30.08678273903206,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0004",
+      "frames": 513,
+      "sha256": "9507628f60555be02818c5a0df1310c03387aaff768052125d5d9ba8f766e69a",
+      "elapsed_seconds": 207.68745666905306,
+      "worker_wall_seconds": 211.60461770906113,
+      "peak_vram_allocated_mib": 37753.18701171875,
+      "peak_vram_reserved_mib": 40824.0
+    },
+    {
+      "case_id": "case_0005",
+      "frames": 129,
+      "sha256": "035b63831a7d89ec5cce2989cefaa8d8efed3bbdd97d4d87b63e5863c0c0bae3",
+      "elapsed_seconds": 24.786112384172156,
+      "worker_wall_seconds": 28.610976909985766,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0006",
+      "frames": 129,
+      "sha256": "7e2ff624370f3edba6bec8e3a8c534d32645795d319baf59df6d8db4ae5efa72",
+      "elapsed_seconds": 24.94363712798804,
+      "worker_wall_seconds": 28.17150107002817,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0007",
+      "frames": 513,
+      "sha256": "139691a3fbc5bafd078de0f120b1cc5b9c4ecded72b60c422d7b519cf2d240bf",
+      "elapsed_seconds": 205.3315195941832,
+      "worker_wall_seconds": 209.0632961972151,
+      "peak_vram_allocated_mib": 37753.18701171875,
+      "peak_vram_reserved_mib": 40824.0
+    },
+    {
+      "case_id": "case_0008",
+      "frames": 129,
+      "sha256": "d13c485825ad23a613b3032b10b999d942f96d3e645d96d22297c52e08340b0f",
+      "elapsed_seconds": 24.580082059139386,
+      "worker_wall_seconds": 28.353445932036266,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0009",
+      "frames": 513,
+      "sha256": "30698d32c13084c1927ae1d44cc120b344a14ca5b063a77e332544d7bb0b81ab",
+      "elapsed_seconds": 204.437042015139,
+      "worker_wall_seconds": 208.02156540798023,
+      "peak_vram_allocated_mib": 37753.18701171875,
+      "peak_vram_reserved_mib": 40824.0
+    },
+    {
+      "case_id": "case_0010",
+      "frames": 129,
+      "sha256": "941dbea3bea829899a7d3029ff693a65ba625fa8e63802a52c5c1e0acea719ed",
+      "elapsed_seconds": 24.478977157035843,
+      "worker_wall_seconds": 28.191311483969912,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0011",
+      "frames": 129,
+      "sha256": "6fc26f76ffd28e1c93dfa1d5486a6622ba81fc19d9910ad8ef45918cdf413d76",
+      "elapsed_seconds": 24.317155180033296,
+      "worker_wall_seconds": 27.45482843904756,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0012",
+      "frames": 129,
+      "sha256": "24d5d613f9f4bfc33e7c0633ff1122139ee4a78cd8f451e89ab19d2a7354c9f2",
+      "elapsed_seconds": 25.190768704982474,
+      "worker_wall_seconds": 28.312509150011465,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0013",
+      "frames": 129,
+      "sha256": "e4591588e3bb5baae568b6ad59ec65a35dadb629021b03d9d8c0ac4d5cda9e93",
+      "elapsed_seconds": 24.955794506007805,
+      "worker_wall_seconds": 28.508774399058893,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0014",
+      "frames": 129,
+      "sha256": "9b43aff48ad97acddd9a2ee1b7909d4146013044a7ebe35f26a5c7f66c5703dd",
+      "elapsed_seconds": 24.774504793109372,
+      "worker_wall_seconds": 27.895763469859958,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0015",
+      "frames": 129,
+      "sha256": "deb6fd91829665575fd6989b00a6a4b5d148c19970c92ddfdcf286ebfd9138eb",
+      "elapsed_seconds": 25.28085110289976,
+      "worker_wall_seconds": 28.373886500950903,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0016",
+      "frames": 129,
+      "sha256": "b8faff12bb2cd7aa13ec84272398ac96514205489b7e8724b801405d497fd5c8",
+      "elapsed_seconds": 25.00427526398562,
+      "worker_wall_seconds": 28.48989618802443,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0017",
+      "frames": 129,
+      "sha256": "d3314fcb3ed412071258a32e00a5ed1741f2668a68015a33fdad10dc2f51e55e",
+      "elapsed_seconds": 25.230119006009772,
+      "worker_wall_seconds": 28.40219915099442,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0018",
+      "frames": 129,
+      "sha256": "c6f3c7056118d7a0b9dec6a3dce42166e5752e21de000471641593fa3c9aaf20",
+      "elapsed_seconds": 25.550812045810744,
+      "worker_wall_seconds": 28.666702073067427,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0019",
+      "frames": 513,
+      "sha256": "24abb338c60bc2c486ad54622a761424e32f187c080f472c9f27a79a7362a676",
+      "elapsed_seconds": 205.6808513228316,
+      "worker_wall_seconds": 209.61382032185793,
+      "peak_vram_allocated_mib": 37753.18701171875,
+      "peak_vram_reserved_mib": 40824.0
+    },
+    {
+      "case_id": "case_0020",
+      "frames": 129,
+      "sha256": "9cdaaa75db31f01e923996dd8b7875c97b23fc5810a405242c5c8fd35d79853e",
+      "elapsed_seconds": 25.5655600419268,
+      "worker_wall_seconds": 29.262240331154317,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0021",
+      "frames": 129,
+      "sha256": "e99f2a828914a63b2bcd22b4d40518bd5ae5ba25096d02435e2d2980d2334a11",
+      "elapsed_seconds": 24.073477327125147,
+      "worker_wall_seconds": 27.129056613892317,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0022",
+      "frames": 129,
+      "sha256": "279b2d6b7636c4f14710d8ed26010dc02de4eee3bffaaa9e699d7324ed4d4ef6",
+      "elapsed_seconds": 24.02312066499144,
+      "worker_wall_seconds": 27.122014372842386,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    },
+    {
+      "case_id": "case_0023",
+      "frames": 513,
+      "sha256": "8e060559f6860052ec2d3862b6758b5b342f1961c67b3df84b381805b6203923",
+      "elapsed_seconds": 205.09841761202551,
+      "worker_wall_seconds": 209.03409291710705,
+      "peak_vram_allocated_mib": 37753.18701171875,
+      "peak_vram_reserved_mib": 40824.0
+    },
+    {
+      "case_id": "case_0024",
+      "frames": 129,
+      "sha256": "3e073d30baac11c7c64d76401fdc75c325b80135e33387ca38eb64c6092e04f8",
+      "elapsed_seconds": 24.302312874933705,
+      "worker_wall_seconds": 27.989153553033248,
+      "peak_vram_allocated_mib": 30396.64599609375,
+      "peak_vram_reserved_mib": 30884.0
+    }
+  ]
+}
