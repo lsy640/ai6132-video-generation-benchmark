@@ -1,0 +1,25 @@
+case_id,category,seed,prompt,source_frame_num,target_frames,image_sha256
+case_0001,single-human,42,a man is running on a dirt road,512,513,16b2f0d4f1b408720d46c6e1b617435649005e2ba4b98f37854a437dd24f621e
+case_0002,single-human,42,a woman walking down a sidewalk with a bag,128,129,29f048a2ffbb056a915f4e55f87780692e813bf5b97cd066f59eb3100b21c6e7
+case_0003,single-human,42,an older man playing a saxophone on the street,128,129,d5ea92bca65e1c2ea3cc6a84bd83cf544d0e6eb140c07ba58ecc24816f7cda5c
+case_0004,multiple-human,42,a man and a woman are boxing in a boxing ring,512,513,a5b1160982e04e5056c071f8b94dba887c07c8ae3a128c4083ece4aeda283bd7
+case_0005,multiple-human,42,an older woman and a young girl are knitting together,128,129,0615c593e59b0547edcdfacb450bbb3b52b7c59f51e72d8106244d9830a6c075
+case_0006,multiple-human,42,two young girls playing with leaves in the woods,128,129,74ce0a48a3ac9d9c6daf1959fd0e33c31000c5e2f7b80fe8247935a47c668606
+case_0007,animal,42,a giraffe walking in a field,512,513,fe258612c43ed644a3cf55cf57e3d93892e8e2707bc99b09b53ebafed4c57acc
+case_0008,animal,42,a sea turtle swimming in the ocean under the water,128,129,d5a383c998e54616f5bc224bee0d9ccd8dd1418164ee7a7914e82a62a1d97285
+case_0009,transportation,42,a blue train traveling through a lush green area,512,513,a834255a97cba13e3cb53ddb3871bf46108a51df830663e30562e641335c61d3
+case_0010,transportation,42,a large cargo ship sailing in the water,128,129,70b36990f1ec6b240682dced6e6bbd8b1dc6b9eb36a4a7c39156d8e3bf634838
+case_0011,food,42,a stack of pancakes covered in syrup and fruit,128,129,fe3483570997c494aaeb16830f94e771a02a42166cc8bbda9c0e1a539bb87f25
+case_0012,food,42,a person slicing salmon on a cutting board,128,129,4f0d108f40c317aa7bc037ec112532695e302bd7f983588b3adf41df739364be
+case_0013,plant,42,a dandelion blowing in the wind,128,129,08e8003b4a9d0ce980b9f9b9dadcac9c11255d8e9ff7c04f1176256ed032e5ea
+case_0014,plant,42,a pink lotus flower in the middle of a pond,128,129,909cac8c0d84d1279f0ad43658be80f010bc89102644ad70a84a57cf16452d6b
+case_0015,other,42,a snowman wearing a santa hat and scarf,128,129,75b0d2d6c6ac767da89b9586fc32bfd63617c5e7bf093e418705035e93fde2ab
+case_0016,other,42,a teddy bear sitting on a moss covered ground,128,129,c01a35d14d3e00be94d7215b64aa6e163da0d9eeeb20f34b3e2d4c0107d14231
+case_0017,architecture,42,the great wall of china in autumn,128,129,1efcfeb84db1336150f319b2e1701f310e941cdd7eab900af25a3e8bd588d6c1
+case_0018,architecture,42,tower bridge in london,128,129,159139311fbbf2357dfd475c765a68ff22ebef771b211d55a1b55864aa3c370f
+case_0019,scenery,42,a large waterfall in the middle of a lush green hillside,512,513,758abb0f041508506dce6c60367a11feff7c22a93c39eb6674d43861d0d8daa9
+case_0020,scenery,42,the sun is setting over a lake in the mountains,128,129,ee067cc59e93e4d03476cae59a3f92b55d56229df1ff5c6df60696933632a761
+case_0021,indoor,42,a modern living room with wood floors and a tv,128,129,f54539a93bf5473e4f0c67685a3fe676d6436f263759e874657a7670a5db5495
+case_0022,indoor,42,an art gallery with paintings on the walls,128,129,ecc932d9e1fb13b08912b67484052da51a1bf780d16fbf9bad69baf1c64af958
+case_0023,abstract,42,A black and white abstract video featuring mesmerizing bubbles,512,513,8517b29db37c27eb5a22571d5eb8b8d051cbd6936f8c4e9cc2e009c8cca79a16
+case_0024,abstract,42,a close up of a blue and orange liquid,128,129,d6904dd40b9794dc920b3c2158b0ea5004a43ccb0ae8eb38b185011520c51ec6

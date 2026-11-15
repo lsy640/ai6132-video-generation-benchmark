@@ -1,0 +1,32 @@
+{
+  "model_id": "longcat-video-480p-16step-distill",
+  "case_count": 24,
+  "success": 24,
+  "short_count": 18,
+  "long_count": 6,
+  "independent_B_acceptance": false,
+  "member_D_local_full_decode_verified": true,
+  "source_formal_evaluation_preserved": false,
+  "source_case_0001_origin": "imported_validated_trial",
+  "total_case_elapsed_seconds": 30535.773959724,
+  "short_mean_seconds": 447.3589402651673,
+  "long_mean_seconds": 3747.218839158498,
+  "short_median_seconds": 446.0315198120661,
+  "long_median_seconds": 3741.1024446049705,
+  "native_frames_total": 5400,
+  "native_size": [
+    832,
+    480
+  ],
+  "native_durations_seconds": {
+    "129": 8.6,
+    "513": 34.2
+  },
+  "gpu_model": "NVIDIA L40S",
+  "slurm_jobs": {
+    "short": 54702,
+    "long": 54703,
+    "imported_long": 54644
+  },
+  "scope": "Generation records only; native media are provided separately; group/B acceptance of documented protocol exceptions pending."
+}

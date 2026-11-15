@@ -1,0 +1,256 @@
+{
+  "canonical_sha256": "cca2f33bcc1a73a9a81ffadc177f80da589ef33d4d22661266af294eea5bd278",
+  "source_batch_sha256": "e14e9370bab642e2043392f1ef3ce0b046aa55378ab59a6e7a4c9b8754f060fc",
+  "source_runs_sha256": "f8d6eba248e46b1a8c15a0ce0b61dfe907f9e7013a56f0d25e1f6f04cb413708",
+  "decoded": {
+    "case_0001": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0002": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0003": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0004": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0005": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0006": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0007": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0008": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0009": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0010": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0011": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0012": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0013": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0014": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0015": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0016": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0017": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0018": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0019": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0020": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0021": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0022": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    },
+    "case_0023": {
+      "width": 832,
+      "height": 480,
+      "frames": 513,
+      "fps": 15.0,
+      "duration": 34.2,
+      "codec": "h264"
+    },
+    "case_0024": {
+      "width": 832,
+      "height": 480,
+      "frames": 129,
+      "fps": 15.0,
+      "duration": 8.6,
+      "codec": "h264"
+    }
+  },
+  "model_id": "longcat-video-480p-16step-distill",
+  "status": "member_D_local_export_verified",
+  "independent_B_acceptance": false,
+  "decoder": "pyav",
+  "utc": "2026-11-15T14:54:20.457476+00:00",
+  "files": {
+    "configs/case_0001.json": "b1572e96015055a1f5b57a69687507599d3f418e9fada8463bd8153ad3a64193",
+    "configs/case_0002.json": "fe11be6bcf444ae7db57b943ea06fc1a354b5b8754d19a15c22d81d91334b0bb",
+    "configs/case_0003.json": "db68203c378342e37d4311957e8b82bd27f8c53fd4c283398c4967a9e686f365",
+    "configs/case_0004.json": "22fcc1a072b26be794e8549037c91b0226a811cabca21c396e5c07752666e2c7",
+    "configs/case_0005.json": "ca9bb25455b637fd8f1dc21c0c756dcff4306e8c10494b39ff86b0367bdad96b",
+    "configs/case_0006.json": "a35ae2c6572ef8d60a14af1b6c911d82185e8c2ba3eff63c02e088d3dd9160ad",
+    "configs/case_0007.json": "254c8b868338bcb253250ebd45349b0ad704c13764f86aae415396ee7723f4f9",
+    "configs/case_0008.json": "0b1387b38902ee4ec7bd940c4021acaae1539746ea2c72bb5a023be700a508d0",
+    "configs/case_0009.json": "87fba01cfbeb73cd23d5aa3a62e09ce1faf8c30041eeea308e5faffb492811ea",
+    "configs/case_0010.json": "138ef0d02c80995cb33fb4e3f07dffa5ce40ca5d93fa0e8d8e808592299f9870",
+    "configs/case_0011.json": "9efa0d42a245433dd1611d848d4cfdf126145fadbf759b5d185050043898f548",
+    "configs/case_0012.json": "870e442c9ed1406d2cbbc5bc3629df4fe5482c5c88277d547c378b50d1fcabcb",
+    "configs/case_0013.json": "73a61a3a6f2437e15cf9b7b4390c2c7bc9e8ab7948d6c1d52071686e7b5e31cb",
+    "configs/case_0014.json": "b2ee5fb42b3ee1314c7242f857ec503d6b3874afa0d020eddb122fad6d40d8e9",
+    "configs/case_0015.json": "07b36e342a4dbbd795905c024761d192d26f1f8be7db36b881241217e430e8f9",
+    "configs/case_0016.json": "68eb007d99f8850858370230119647476436925e833d4cbed6bf1578725c9308",
+    "configs/case_0017.json": "8d535f0a72110c6e7e88892219154976f94dbbd03bfda9683b2dac3acde8aae4",
+    "configs/case_0018.json": "f8850af20c8c13bdaa946b42b79e8b2cd2a0a9f23255e04c43f2a6b731376ba8",
+    "configs/case_0019.json": "438cc76a7e5ad8ff8983fe3bf9b64671eedc6b1804d1c7209fbec6f2969ce919",
+    "configs/case_0020.json": "55db858c4ab78c44f3fc7ca151fe59c0383ffceb8d229bbeedf680421a2ac69d",
+    "configs/case_0021.json": "77dfbb4d58d5015e46e0120204c9883b5fa01a07b94bcdbcea2494d2bf6445fa",
+    "configs/case_0022.json": "439255c528a60b68d218433331f63d1e05239829e7fa4e956eda2fe3ee1d7499",
+    "configs/case_0023.json": "572f612b41fbb5378aeb71d2eed786fbf4e4e2242172d97402f341b91bf0a320",
+    "configs/case_0024.json": "cef86e006a2455fa60f8fd85ec3715a5fb6c9f428ef294b24218f31ae15c32a5",
+    "native/case_0001.mp4": "15af7c79d95c260b86372bb0778a446010c40e67209a7d77a7f07188ead25fab",
+    "native/case_0002.mp4": "878c64e006f58edc27d28ff5bf813a3418afa87bdf1ee1ec37f22ef0b4adf48a",
+    "native/case_0003.mp4": "df985129c688dd89bbe240a7be023b0a832c652ed32c65850edd7a9c111e7ea6",
+    "native/case_0004.mp4": "9c3d0bf302c76a331a1b07d503afa62c7ec2076b82053ccfd520d9251ba35e0e",
+    "native/case_0005.mp4": "7d349925e142fb05d1da50581d5ef3fedd418968f7719b5134e581a77ed313a8",
+    "native/case_0006.mp4": "d2def6a4e282c6699f959e1555ff782747e9719530a1864bb53fe3f54527c261",
+    "native/case_0007.mp4": "20b99f3fb1a070a7f06d4b3151ec4acb30f0a477d5435c82c2337b6abe815758",
+    "native/case_0008.mp4": "946c04e1595dca7873c4bdc4a3f06499df34452a992718323a1a9027c1f3f2fe",
+    "native/case_0009.mp4": "4d5a2938c10ee7b06460a68efeb27990506cc100f32244b2a8a30912e8734c06",
+    "native/case_0010.mp4": "e597afa84f3bafe0c145abf2f7b18cda7fad6689609fdfb94c00f5044a4d42a9",
+    "native/case_0011.mp4": "076503ab2636709660dad9732f55dfb76bc5e753a5fe9f27c36645a998c7bf27",
+    "native/case_0012.mp4": "e636378f51b171833c1107f06c0e4fbf8b3a5f32779c45d584e9821f89b025e1",
+    "native/case_0013.mp4": "65c13e6c932df10a0ad87813835d1f9fbe714823ed4e68500836b2a651186a30",
+    "native/case_0014.mp4": "c2b1255e9b7250df3786e851411f9350f11a8de050c31376ec8ccb9bb21d754c",
+    "native/case_0015.mp4": "8a09fbfaba067d1535036de7915d7601ed62cc1c375aaa2d88dd6debacb8e638",
+    "native/case_0016.mp4": "452735291aa180a920998265848e68cb2d6a751e75a415d44afaba8801ad3834",
+    "native/case_0017.mp4": "c456f3e817618f1c25b16904d5efeeb4ec6e1bbfd38deb1201c7ee3e3f74c0fe",
+    "native/case_0018.mp4": "2019e17a1ac34a9d5fb07a7832b910033d1f742579087a97f518abc4cacd890e",
+    "native/case_0019.mp4": "d03ed0416dd0a2094c702c5e2df8ee74b96add052a0a2ffe40e95ace5feaaea5",
+    "native/case_0020.mp4": "886529e4b261e395117e3feece049a8b3ab29e907e7ccda87c3ed312d2f357a4",
+    "native/case_0021.mp4": "0dab09e19dfe3f013fcca0019b7f559f1f82b46365a195c240e0542189e210f7",
+    "native/case_0022.mp4": "23a67041d811c630ad86e259e9d8c8bd2392304444b41a35c6253c432e1b448f",
+    "native/case_0023.mp4": "6150a7b74c78dcf0c37bfb0d735714235482ca30caf336ddf37a47a1c3281a58",
+    "native/case_0024.mp4": "546fbaafd0fd54aa3636f5d95b29172a2275ab9b0ab9f015a1109796901d9fad",
+    "runs.csv": "4624024379e93902afa34d21cafc29b8c9851b22cd2a242cf9d77bbea54b03d8",
+    "selection.json": "1ba040f4c1aa803116b63c90f5281336a629c33632cb75ecfd56745ed63fd2ef"
+  }
+}

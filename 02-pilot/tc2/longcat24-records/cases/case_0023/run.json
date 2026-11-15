@@ -1,0 +1,57 @@
+{
+  "model_id": "meituan-longcat/LongCat-Video",
+  "model_revision": "03b55529b1d1d4045f5fbe14d65c8c6e8116b278",
+  "source_revision": "58eb336edc5c8c63389838727e40b8c18434e54e",
+  "seed": 42,
+  "resolution": "480p",
+  "num_inference_steps": 16,
+  "guidance_scale": 1.0,
+  "use_distill": true,
+  "native_fps": 15,
+  "cpu_offload_block_count": 40,
+  "share_identical_rope_frequency_cache": true,
+  "formal_evaluation": false,
+  "generation_mode": "single generate_i2v call; no continuation or frame interpolation",
+  "trial_id": "longcat16_full24_20261115/case_0023",
+  "source_case": "case_0023",
+  "case_id": "case_0023",
+  "category": "abstract",
+  "prompt": "A black and white abstract video featuring mesmerizing bubbles",
+  "source_frame_num": "512",
+  "num_frames": 513,
+  "image_relative_path": "input/shared24/dataset/23_A black and white abstract video featuring mesmerizing bubbles.jpg",
+  "image_sha256": "8517b29db37c27eb5a22571d5eb8b8d051cbd6936f8c4e9cc2e009c8cca79a16",
+  "status": "succeeded",
+  "started_utc": "2026-11-15T13:23:05.446840+00:00",
+  "slurm_job_id": "54703",
+  "stages": {
+    "encode": {
+      "elapsed_seconds": 8.510002391180024
+    },
+    "denoise": {
+      "elapsed_seconds": 3645.2478986082133
+    },
+    "decode": {
+      "elapsed_seconds": 62.807227704208344
+    }
+  },
+  "stage": "decode",
+  "native": {
+    "width": 832,
+    "height": 480,
+    "fps": 15.0,
+    "frames": 513,
+    "duration_seconds": 34.2,
+    "sha256": "6150a7b74c78dcf0c37bfb0d735714235482ca30caf336ddf37a47a1c3281a58"
+  },
+  "evaluation": {
+    "width": 768,
+    "height": 432,
+    "fps": 12.0,
+    "frames": 410,
+    "duration_seconds": 34.166666666666664,
+    "sha256": "9cb6dcb92c587c32ab999c13f19e619b30d3f94b4bb5bd4bb692b11f1e92bb1f"
+  },
+  "ended_utc": "2026-11-15T14:25:11.404597+00:00",
+  "elapsed_seconds": 3725.9577868969645
+}

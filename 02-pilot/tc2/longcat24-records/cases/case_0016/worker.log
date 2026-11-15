@@ -1,0 +1,57 @@
+{
+  "model_id": "meituan-longcat/LongCat-Video",
+  "model_revision": "03b55529b1d1d4045f5fbe14d65c8c6e8116b278",
+  "source_revision": "58eb336edc5c8c63389838727e40b8c18434e54e",
+  "seed": 42,
+  "resolution": "480p",
+  "num_inference_steps": 16,
+  "guidance_scale": 1.0,
+  "use_distill": true,
+  "native_fps": 15,
+  "cpu_offload_block_count": 0,
+  "share_identical_rope_frequency_cache": true,
+  "formal_evaluation": false,
+  "generation_mode": "single generate_i2v call; no continuation or frame interpolation",
+  "trial_id": "longcat16_full24_20261115/case_0016",
+  "source_case": "case_0016",
+  "case_id": "case_0016",
+  "category": "other",
+  "prompt": "a teddy bear sitting on a moss covered ground",
+  "source_frame_num": "128",
+  "num_frames": 129,
+  "image_relative_path": "input/shared24/dataset/16_a teddy bear sitting on a moss covered ground.jpg",
+  "image_sha256": "c01a35d14d3e00be94d7215b64aa6e163da0d9eeeb20f34b3e2d4c0107d14231",
+  "status": "succeeded",
+  "started_utc": "2026-11-15T08:21:31.321002+00:00",
+  "slurm_job_id": "54702",
+  "stages": {
+    "encode": {
+      "elapsed_seconds": 7.94571421504952
+    },
+    "denoise": {
+      "elapsed_seconds": 419.72604370792396
+    },
+    "decode": {
+      "elapsed_seconds": 17.041775621008128
+    }
+  },
+  "stage": "decode",
+  "native": {
+    "width": 832,
+    "height": 480,
+    "fps": 15.0,
+    "frames": 129,
+    "duration_seconds": 8.6,
+    "sha256": "452735291aa180a920998265848e68cb2d6a751e75a415d44afaba8801ad3834"
+  },
+  "evaluation": {
+    "width": 768,
+    "height": 432,
+    "fps": 12.0,
+    "frames": 103,
+    "duration_seconds": 8.583333333333334,
+    "sha256": "d9c2fae93b7e15f7bdbb9def085e3fbba26b3fbac77f96c83643eb3e491fce79"
+  },
+  "ended_utc": "2026-11-15T08:28:57.013148+00:00",
+  "elapsed_seconds": 445.6921649700962
+}

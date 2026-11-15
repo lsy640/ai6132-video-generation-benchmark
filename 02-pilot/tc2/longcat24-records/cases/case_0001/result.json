@@ -1,0 +1,9 @@
+{
+  "status": "succeeded",
+  "origin": "imported_validated_trial",
+  "source": "/home/msai/mufan001/ai6132-longcat/outputs/longcat480_distill16_case01_20261115_attempt04",
+  "source_run_sha256": "87be75b71747cbeb8bf8b4eeeb2e5b7fda0fdc12ad4a1ff7d349005d058f0e51",
+  "attempt_count": 1,
+  "finished_utc": "2026-11-15T06:59:19.709054+00:00",
+  "slurm_job_id": "54644"
+}

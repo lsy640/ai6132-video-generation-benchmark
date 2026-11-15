@@ -1,0 +1,23 @@
+{
+  "model_id": "longcat-video-480p-16step-distill",
+  "weight_repository": "meituan-longcat/LongCat-Video",
+  "weight_revision": "03b55529b1d1d4045f5fbe14d65c8c6e8116b278",
+  "source_repository": "meituan-longcat/LongCat-Video",
+  "source_revision": "58eb336edc5c8c63389838727e40b8c18434e54e",
+  "lora": "lora/cfg_step_lora.safetensors",
+  "precision": "bfloat16",
+  "resolution": "480p",
+  "num_inference_steps": 16,
+  "guidance_scale": 1.0,
+  "use_distill": true,
+  "seed": 42,
+  "native_fps": 15,
+  "memory": {
+    "short_offload_blocks": 0,
+    "long_offload_blocks": 40,
+    "oom_fallback_blocks": 40
+  },
+  "share_identical_rope_frequency_cache": true,
+  "weights_receipt": "provenance/weights-manifest.json",
+  "environment": "provenance/environment-freeze.txt"
+}

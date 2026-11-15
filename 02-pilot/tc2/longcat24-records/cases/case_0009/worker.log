@@ -1,0 +1,57 @@
+{
+  "model_id": "meituan-longcat/LongCat-Video",
+  "model_revision": "03b55529b1d1d4045f5fbe14d65c8c6e8116b278",
+  "source_revision": "58eb336edc5c8c63389838727e40b8c18434e54e",
+  "seed": 42,
+  "resolution": "480p",
+  "num_inference_steps": 16,
+  "guidance_scale": 1.0,
+  "use_distill": true,
+  "native_fps": 15,
+  "cpu_offload_block_count": 40,
+  "share_identical_rope_frequency_cache": true,
+  "formal_evaluation": false,
+  "generation_mode": "single generate_i2v call; no continuation or frame interpolation",
+  "trial_id": "longcat16_full24_20261115/case_0009",
+  "source_case": "case_0009",
+  "case_id": "case_0009",
+  "category": "transportation",
+  "prompt": "a blue train traveling through a lush green area",
+  "source_frame_num": "512",
+  "num_frames": 513,
+  "image_relative_path": "input/shared24/dataset/09_a blue train traveling through a lush green area.jpg",
+  "image_sha256": "a834255a97cba13e3cb53ddb3871bf46108a51df830663e30562e641335c61d3",
+  "status": "succeeded",
+  "started_utc": "2026-11-15T11:18:21.041917+00:00",
+  "slurm_job_id": "54703",
+  "stages": {
+    "encode": {
+      "elapsed_seconds": 8.357898082816973
+    },
+    "denoise": {
+      "elapsed_seconds": 3664.8819955151994
+    },
+    "decode": {
+      "elapsed_seconds": 64.26188985118642
+    }
+  },
+  "stage": "decode",
+  "native": {
+    "width": 832,
+    "height": 480,
+    "fps": 15.0,
+    "frames": 513,
+    "duration_seconds": 34.2,
+    "sha256": "4d5a2938c10ee7b06460a68efeb27990506cc100f32244b2a8a30912e8734c06"
+  },
+  "evaluation": {
+    "width": 768,
+    "height": 432,
+    "fps": 12.0,
+    "frames": 410,
+    "duration_seconds": 34.166666666666664,
+    "sha256": "a17031493ec640d7ed130c89abc145080858808e1cfa533816f324803542e371"
+  },
+  "ended_utc": "2026-11-15T12:20:49.993024+00:00",
+  "elapsed_seconds": 3748.9528325579595
+}

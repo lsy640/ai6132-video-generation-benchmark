@@ -1,0 +1,57 @@
+{
+  "model_id": "meituan-longcat/LongCat-Video",
+  "model_revision": "03b55529b1d1d4045f5fbe14d65c8c6e8116b278",
+  "source_revision": "58eb336edc5c8c63389838727e40b8c18434e54e",
+  "seed": 42,
+  "resolution": "480p",
+  "num_inference_steps": 16,
+  "guidance_scale": 1.0,
+  "use_distill": true,
+  "native_fps": 15,
+  "cpu_offload_block_count": 40,
+  "share_identical_rope_frequency_cache": true,
+  "formal_evaluation": false,
+  "generation_mode": "single generate_i2v call; no continuation or frame interpolation",
+  "trial_id": "longcat16_full24_20261115/case_0004",
+  "source_case": "case_0004",
+  "case_id": "case_0004",
+  "category": "multiple-human",
+  "prompt": "a man and a woman are boxing in a boxing ring",
+  "source_frame_num": "512",
+  "num_frames": 513,
+  "image_relative_path": "input/shared24/dataset/04_a man and a woman are boxing in a boxing ring.jpg",
+  "image_sha256": "a5b1160982e04e5056c071f8b94dba887c07c8ae3a128c4083ece4aeda283bd7",
+  "status": "succeeded",
+  "started_utc": "2026-11-15T09:13:38.508424+00:00",
+  "slurm_job_id": "54703",
+  "stages": {
+    "encode": {
+      "elapsed_seconds": 8.53644522302784
+    },
+    "denoise": {
+      "elapsed_seconds": 3677.87640592386
+    },
+    "decode": {
+      "elapsed_seconds": 49.862252664985135
+    }
+  },
+  "stage": "decode",
+  "native": {
+    "width": 832,
+    "height": 480,
+    "fps": 15.0,
+    "frames": 513,
+    "duration_seconds": 34.2,
+    "sha256": "9c3d0bf302c76a331a1b07d503afa62c7ec2076b82053ccfd520d9251ba35e0e"
+  },
+  "evaluation": {
+    "width": 768,
+    "height": 432,
+    "fps": 12.0,
+    "frames": 410,
+    "duration_seconds": 34.166666666666664,
+    "sha256": "c5bf85685a8a8e8985fe088a30c45c489292e396e8d215ee9cb2739f56166a95"
+  },
+  "ended_utc": "2026-11-15T10:15:57.711228+00:00",
+  "elapsed_seconds": 3739.2028278410435
+}
