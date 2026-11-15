@@ -15,7 +15,7 @@ AI6132 Project 1 · Technical Review
 | C | **LTX-Video 13B v0.9.8 Distilled**。BF16、官方两阶段 7+3 timesteps，第二阶段 tone map compression ratio 为 0.6；首图作为第 0 帧条件，关闭提示词扩写。 [固定官方配置](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/configs/ltxv-13b-0.9.8-distilled.yaml) | 编制统一评分表，随机化每人的观看顺序，收齐四份原始评分。 |
 | D | **LongCat-Video**。48 GB 卡优先试跑 480p、16 步蒸馏。24 GB 卡或 LongCat 试跑未达标时，试跑 **CogVideoX1.5-5B-I2V** 的官方 offload 配置。 [LongCat 官方示例](https://github.com/meituan-longcat/LongCat-Video/blob/main/run_demo_image_to_video.py) · [CogVideoX 模型卡](https://huggingface.co/zai-org/CogVideoX1.5-5B-I2V) | 合并人评、模型评审与自动指标，计算一致性并整合报告。 |
 
-**2026-11-15 模型修订：**经全组同意，C 从 2B 改为 13B，并在独立批次重跑全部 24 例。原图、原始 prompt、seed=42、案例顺序、18×129＋6×513 帧及 768×432 / 24 fps 不变；各模型使用已冻结的官方采样配置，比较时分别报告步数、硬件与耗时。旧 2B 批次和 [PR #2](https://github.com/lsy640/ai6132-video-generation-benchmark/pull/2) 记录保留为历史，不在同一模型结果中混选 2B/13B 视频。13B 正式作业 54620 进行中，结果另行验收。
+**2026-11-15 模型修订：**经全组同意，C 从 2B 改为 13B，并在独立批次重跑全部 24 例。原图、原始 prompt、seed=42、案例顺序、18×129＋6×513 帧及 768×432 / 24 fps 不变；各模型使用已冻结的官方采样配置，比较时分别报告步数、硬件与耗时。旧 2B 批次和 [PR #2](https://github.com/lsy640/ai6132-video-generation-benchmark/pull/2) 记录保留为历史，不在同一模型结果中混选 2B/13B 视频。13B 正式作业 54620 已完成 24/24，并通过 C 的完整解码和哈希验收；[逐条统计与凭据](02-pilot/tc2/ltx13b-formal-summary.json)已保存，B 独立接收和正式评分待完成。
 
 C 使用顺序加载与释放的内存适配：缓存 T5 编码结果后释放文本编码器，两阶段完成后释放 Transformer 再解码。2B 129 帧回归与原片 SHA256 相同；13B 已通过 case_0001 的 129/513 帧技术试跑。本次按全组修订直接重跑正式 24 例，沿用这两条技术试跑，不另跑三个独立共同试跑样本；三样本共同校准仍未完成。试跑记录见 [C 批次报告](02-pilot/tc2/C_FORMAL_REPORT.md)。
 

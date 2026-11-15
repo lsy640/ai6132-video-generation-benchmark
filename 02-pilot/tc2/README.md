@@ -33,11 +33,11 @@ sbatch --partition=MGPU-TC2 --qos=normal /path/to/install_ltx.sh
 
 ## 完整流程检查与后续批次
 
-2026-11-15 全组同意将 C 改为 13B v0.9.8 Distilled，并在新目录重跑同一规范清单的全部 24 例。BF16、官方 7+3 timesteps、第二阶段 tone map compression ratio 0.6、关闭提示词扩写，18×129＋6×513 帧及 768×432 / 24 fps 固定。case_0001 的长短技术试跑已通过，正式作业 54620 进行中；未另行完成三个独立共同试跑样本。旧 2B 作业 54359 的 24 条结果与 PR #2 来源保留在 [C 批次报告](C_FORMAL_REPORT.md)。
+2026-11-15 全组同意将 C 改为 13B v0.9.8 Distilled，并在新目录重跑同一规范清单的全部 24 例。BF16、官方 7+3 timesteps、第二阶段 tone map compression ratio 0.6、关闭提示词扩写，18×129＋6×513 帧及 768×432 / 24 fps 固定。正式作业 **54620 已完成 24/24，COMPLETED / 0:0 / 30 分 27 秒**；CPU 作业 54622 的 64 项回归及 24 条 FFmpeg 全片验收通过，本地 PyAV 再次完整解码 5400 帧。当前为 C 的技术验收，B 尚待接收，正式人工评分待完成。详见 [汇总 JSON](ltx13b-formal-summary.json)与[C 批次报告](C_FORMAL_REPORT.md)，其中保留旧 2B 作业 54359 及 PR #2 历史。
 
 旧 cu121 环境在 2B 513 帧 VAE 解码失败；当前 `run_ltx.sh` 默认激活 `AI6132_LTX_ENV=${AI6132_ROOT}/env-cu126`。在基础环境和 LTX 安装成功后，查询配额并提交 `sbatch 02-pilot/tc2/bootstrap_cu126.sh` 创建独立 cu126 环境。脚本默认 MGPU-TC2/normal、1节点、8CPU、28G、1GPU、1小时，无节点绑定；安装前检查 Home 用量、克隆体积和 12GB 升级缓存预留。已有环境时直接复用，不在其中重跑旧 constraints。Conda hook 与 activate 均保护 nounset，启用 cuDNN v8 API 路径。
 
-13B 沿用 torch2.6.0+cu126 / cuDNN9.5.1。内存适配先缓存提示词编码后释放 T5，两阶段完成后释放 Transformer 再解码，实际 CPU offload 为 false。2B129 适配回归与旧基线 SHA256 一致；13B129/513 的单次生成耗时为 40.5888/208.5975 秒，详细证据见 [验证记录](VALIDATION.md)。
+13B 沿用 torch2.6.0+cu126 / cuDNN9.5.1。内存适配先缓存提示词编码后释放 T5，两阶段完成后释放 Transformer 再解码，实际 CPU offload 为 false。2B129 适配回归与旧基线 SHA256 一致；13B 正式短片/长片生成均值为 25.0237/206.1915 秒。此前 case_0001 的长短技术试跑分别为 40.5888/208.5975 秒，单列保存，不计入正式统计；本次未另行完成三个独立共同试跑样本。详细证据见 [验证记录](VALIDATION.md)。
 
 从仓库根目录提交 CPU 作业，建立合成环境检查输入（个人环境中需有 Pillow）：
 
