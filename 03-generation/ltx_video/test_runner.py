@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import patch
 
 import run_cases
-from common import read_cases, select_cases, write_json
+from common import MODEL_ID, MODEL_REVISION, TEXT_REVISION, read_cases, select_cases, verify_assets, write_json
 from ai6132_benchmark.dataset import COUNTS, FIELDS
 
 
@@ -188,7 +188,77 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual((status, len(calls)), (0, 24))
         self.assertEqual([p['settings']['num_frames'] for p in calls], [513] * 6 + [129] * 18)
         self.assertEqual(len({p['case']['category'] for p in calls}), 11)
+        self.assertEqual({p['record']['model_id'] for p in calls}, {'ltxv-13b-0.9.8-distilled'})
+        for payload in calls:
+            run_cases.verify_worker_code(payload)
+            options = run_cases.inference_arguments(payload)
+            self.assertEqual(options['num_frames'], payload['case']['target_frames'])
+            self.assertEqual(options['conditioning_start_frames'], [0])
+            self.assertEqual(options['conditioning_strengths'], [1.0])
+            self.assertEqual(options['image_cond_noise_scale'], 0.15)
+            self.assertEqual(options['prompt'], payload['case']['prompt'])
+            self.assertEqual(options['seed'], payload['case']['seed'])
         self.assertEqual(self.run_fixture(phase='formal'), (0, []))
+
+    def test_13b_config_and_snapshot_preserve_the_validated_adapter(self):
+        self.manifest()
+        status, calls = self.run_fixture()
+        self.assertEqual(status, 0)
+        output = self.root / 'result'
+        frozen = json.loads((output / 'batch.json').read_text())
+        receipt = json.loads((output / 'source_receipt.json').read_text())
+        self.assertEqual(frozen['schema_version'], 3)
+        self.assertEqual(frozen['source_receipt'], receipt)
+        self.assertEqual(set(receipt['files']), set(run_cases.SOURCE_FILES))
+        self.assertEqual(frozen['memory_adapter_sha256'], 'ef26651b6d78861db9331eca86a94d9ba31821ddc3f56d710d7418f8e44aad7a')
+        self.assertEqual(calls[0]['record']['source_receipt_sha256'], run_cases.digest(output / 'source_receipt.json'))
+        template = json.loads((output / receipt['files']['pipeline_template']['path']).read_text())
+        self.assertEqual(template['checkpoint_path'], 'ltxv-13b-0.9.8-distilled.safetensors')
+        self.assertEqual(template['second_pass']['tone_map_compression_ratio'], 0.6)
+        self.assertEqual(template['prompt_enhancement_words_threshold'], 0)
+        self.assertEqual((len(template['first_pass']['timesteps']), len(template['second_pass']['timesteps'])), (7, 3))
+        legacy = json.loads((run_cases.HERE / 'ltxv-2b-0.9.8-no-enhance.json').read_text())
+        self.assertEqual(legacy['checkpoint_path'], 'ltxv-2b-0.9.8-distilled.safetensors')
+
+    def test_changed_frozen_source_blocks_worker_and_resume(self):
+        self.manifest()
+        _, calls = self.run_fixture()
+        payload = calls[0]
+        receipt = payload['source_receipt']
+        saved = self.root / 'result' / receipt['files']['memory_adapter']['path']
+        saved.write_bytes(saved.read_bytes() + b'\n# changed\n')
+        with self.assertRaisesRegex(ValueError, 'source snapshot'):
+            run_cases.verify_worker_code(payload)
+        with self.assertRaisesRegex(ValueError, 'source snapshot'):
+            self.run_fixture()
+
+    def test_worker_rejects_changed_code_model_and_conditioning(self):
+        self.manifest()
+        _, calls = self.run_fixture()
+        payload = calls[0]
+        original_sha = payload['code_sha256']['memory_adapter']
+        payload['code_sha256']['memory_adapter'] = '0' * 64
+        with self.assertRaisesRegex(ValueError, 'Frozen worker code changed'):
+            run_cases.verify_worker_code(payload)
+        payload['code_sha256']['memory_adapter'] = original_sha
+        payload['record']['model_id'] = 'ltxv-2b-0.9.8-distilled'
+        with self.assertRaisesRegex(ValueError, 'selected 13B'):
+            run_cases.verify_worker_code(payload)
+        payload['record']['model_id'] = MODEL_ID
+        for key, changed in [('conditioning_strength', 0.8), ('image_cond_noise_scale', 0.05),
+                             ('conditioning_start_frame', 1), ('memory_strategy', 'none')]:
+            original = payload['settings'][key]
+            payload['settings'][key] = changed
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'conditioning/memory'):
+                run_cases.inference_arguments(payload)
+            payload['settings'][key] = original
+
+    def test_2b_assets_cannot_be_used_as_13b(self):
+        root = self.root / 'assets'
+        write_json(root / 'assets.json', {'model_revision': MODEL_REVISION, 'text_revision': TEXT_REVISION,
+                                        'files': {'ltx/ltxv-2b-0.9.8-distilled.safetensors': '0' * 64}})
+        with self.assertRaisesRegex(ValueError, 'required model'):
+            verify_assets(root)
 
     def test_removed_cli_flags_are_rejected(self):
         base = ['--cases', str(self.csv), '--phase', 'formal']

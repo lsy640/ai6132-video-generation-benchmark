@@ -12,8 +12,12 @@ AI6132 Project 1 · Technical Review
 | --- | --- | --- |
 | A | **Wan2.2-TI2V-5B**。官方 I2V，50 步，CPU offload。主批次完成后，可用预先冻结的代表子集做 25 步对照，单列结果且不计入正式96条。 [官方推理说明](https://github.com/Wan-Video/Wan2.2#run-text-image-to-video-generation) | 维护公共样本清单，冻结首图、提示词、样本 ID 和种子。 |
 | B | **HunyuanVideo-1.5-480P-I2V-step-distill**。480p、8 步，开启 offload，关闭提示词改写和超分。 [官方仓库](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5) | 汇总生成日志，检查视频解码，制作统一评分副本，运行 VBench-I2V 和 Qwen3-VL。 |
-| C | **LTX-Video 2B v0.9.8 Distilled**。官方两阶段配置，首图作为第 0 帧条件，关闭提示词扩写。 [官方配置](https://github.com/Lightricks/LTX-Video/blob/main/configs/ltxv-2b-0.9.8-distilled.yaml) | 编制统一评分表，随机化每人的观看顺序，收齐四份原始评分。 |
+| C | **LTX-Video 13B v0.9.8 Distilled**。BF16、官方两阶段 7+3 timesteps，第二阶段 tone map compression ratio 为 0.6；首图作为第 0 帧条件，关闭提示词扩写。 [固定官方配置](https://github.com/Lightricks/LTX-Video/blob/50f0aef1297574a4b29acbdb874e3a363a6d5f2e/configs/ltxv-13b-0.9.8-distilled.yaml) | 编制统一评分表，随机化每人的观看顺序，收齐四份原始评分。 |
 | D | **LongCat-Video**。48 GB 卡优先试跑 480p、16 步蒸馏。24 GB 卡或 LongCat 试跑未达标时，试跑 **CogVideoX1.5-5B-I2V** 的官方 offload 配置。 [LongCat 官方示例](https://github.com/meituan-longcat/LongCat-Video/blob/main/run_demo_image_to_video.py) · [CogVideoX 模型卡](https://huggingface.co/zai-org/CogVideoX1.5-5B-I2V) | 合并人评、模型评审与自动指标，计算一致性并整合报告。 |
+
+**2026-11-15 模型修订：**经全组同意，C 从 2B 改为 13B，并在独立批次重跑全部 24 例。原图、原始 prompt、seed=42、案例顺序、18×129＋6×513 帧及 768×432 / 24 fps 不变；各模型使用已冻结的官方采样配置，比较时分别报告步数、硬件与耗时。旧 2B 批次和 [PR #2](https://github.com/lsy640/ai6132-video-generation-benchmark/pull/2) 记录保留为历史，不在同一模型结果中混选 2B/13B 视频。13B 正式作业 54620 进行中，结果另行验收。
+
+C 使用顺序加载与释放的内存适配：缓存 T5 编码结果后释放文本编码器，两阶段完成后释放 Transformer 再解码。2B 129 帧回归与原片 SHA256 相同；13B 已通过 case_0001 的 129/513 帧技术试跑。本次按全组修订直接重跑正式 24 例，沿用这两条技术试跑，不另跑三个独立共同试跑样本；三样本共同校准仍未完成。试跑记录见 [C 批次报告](02-pilot/tc2/C_FORMAL_REPORT.md)。
 
 ## 数据、试跑与统一生成标准
 
@@ -24,7 +28,7 @@ AI6132 Project 1 · Technical Review
    本次B生成按2026-11-14用户明确指示跳过生成试跑，直接生成正式24例；在冻结批次中记录 `pilot_validation.status=skipped_by_user` 与原始指示。继续保留输入、资产、参数、完整解码和失败记录校验，未将环境检查声称为模型试跑通过。
 4. **正式生成。** 每案例每模型按清单种子生成 1 条：每模型 **18 条短片＋6 条长片＝24 条**；四模型共 **72 条短片＋24 条长片＝96 条**。使用模型原生帧率并记录实际秒数；24 fps 下约 5.38/21.38 秒，15 fps 下约 8.60/34.20 秒。长片主协议为单次连续生成，失败不得静默改为续写、拼接、循环或插帧。冻结顺序，保留成功、失败和中断尝试，禁止自动重抽。
 5. **全片评分副本。** 保留原片；评分副本覆盖完整视频，取消只取前 5 秒的限制。统一为 **768×432、12 fps、H.264、yuv420p**，保持比例并补边；采用固定 FFmpeg、CRF 18、medium preset，去除音轨与来源 metadata。转换后完整解码，时长误差至多 1/12 秒。原片有效而转换工具失败属于流程故障，不计为模型生成失败。
-6. **交接。** 每位成员交付原片、完整 `runs.csv`、选定案例记录和冻结配置。记录 case/model、种子、来源/目标/实际帧数、fps、时长、版本、GPU、耗时、显存、状态及失败原因。未启动或缺失项保留，不能只用已有视频计成功率。B 自动混排并冻结匿名 ID；C 只接收六列匿名清单、视频和首图，映射与详细日志独立封存。
+6. **交接。** 每位成员交付原片、完整 `runs.csv`、选定案例记录和冻结配置。记录 case/model、种子、来源/目标/实际帧数、fps、时长、版本、GPU、耗时、显存、状态及失败原因。未启动或缺失项保留，不能只用已有视频计成功率。B 自动混排并冻结匿名 ID；C 只接收六列匿名清单、视频和首图，映射与详细日志独立封存。C 的新模型 ID 为 `ltxv-13b-0.9.8-distilled`；B 收到并验收新原片后，为 13B 建立新的评分副本、匿名批次和 VBench/Qwen 结果。若已制作或评分过 2B，保留旧批次，不沿用其模型标签、视频哈希或分数。人工评分工具与量表保持不变，替换视频重新独立评分。
 
 ## VBench-I2V 自动评估
 

@@ -13,13 +13,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from ai6132_benchmark.dataset import FIELDS, validate_profile
 
 UPSTREAM_COMMIT = "50f0aef1297574a4b29acbdb874e3a363a6d5f2e"
-MODEL_ID = "ltxv-2b-0.9.8-distilled"
+MODEL_ID = "ltxv-13b-0.9.8-distilled"
 MODEL_REPO = "Lightricks/LTX-Video"
 MODEL_REVISION = "8984fa25007f376c1a299016d0957a37a2f797bb"
 TEXT_REPO = "PixArt-alpha/PixArt-XL-2-1024-MS"
 TEXT_REVISION = "b89adadeccd9ead2adcb9fa2825d3fabec48d404"
 WEIGHT_FILES = (
-    "ltxv-2b-0.9.8-distilled.safetensors",
+    "ltxv-13b-0.9.8-distilled.safetensors",
     "ltxv-spatial-upscaler-0.9.8.safetensors",
 )
 TEXT_FILES = (
@@ -124,6 +124,8 @@ def expected_assets() -> list[str]:
 
 def verify_assets(root: Path) -> dict:
     manifest = json.loads((root / "assets.json").read_text(encoding="utf-8"))
+    if manifest.get("model_id", MODEL_ID) != MODEL_ID:
+        raise ValueError("Asset model_id differs from the selected 13B model")
     if manifest.get("model_revision") != MODEL_REVISION or manifest.get("text_revision") != TEXT_REVISION:
         raise ValueError("Asset revisions differ from the audited revisions")
     files = manifest.get("files", {})
