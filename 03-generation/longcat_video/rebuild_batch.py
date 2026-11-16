@@ -34,12 +34,7 @@ def prepare(cases, runtime, reused_long, output):
         raise ValueError('Reused processing artifact changed')
     code = output/'code'; code.mkdir(parents=True)
     shutil.copyfile(HERE/'frozen/engine.py', code/'engine.py')
-    worker = (HERE/'frozen/worker.py').read_text()
-    old = "'image_relative_path': 'input/shared24/' + case['image_path']"
-    if worker.count(old) != 1:
-        raise ValueError('Unexpected historical worker layout')
-    worker = worker.replace(old, "'image_relative_path': str((Path(config['input_root']) / case['image_path']).resolve())")
-    (code/'worker.py').write_text(worker, encoding='utf-8', newline='\n')
+    shutil.copyfile(HERE/'worker.py', code/'worker.py')
     wave = (HERE/'frozen/wave.slurm').read_text()
     old = 'export LONGCAT_ROOT="$HOME/ai6132-longcat"'
     if wave.count(old) != 1:

@@ -17,11 +17,8 @@ from ai6132_benchmark.io import read_csv, sha256, write_csv
 
 class IntakeTests(unittest.TestCase):
     def setUp(self):
-        tmp = Path(__file__).resolve().parents[4]/'tmp'
-        tmp.mkdir(exist_ok=True)
-        self.temporary = tempfile.TemporaryDirectory(prefix='longcat-intake-', dir=tmp)
+        self.temporary = tempfile.TemporaryDirectory(prefix='longcat-intake-')
         self.root = Path(self.temporary.name).resolve()
-        assert self.root.is_relative_to(tmp.resolve())
         self.addCleanup(self.temporary.cleanup)
         self.raw, self.output, self.reference = [self.root/x for x in ('raw', 'delivery', 'reference')]
         self.raw.mkdir(); self.reference.mkdir()
@@ -99,8 +96,10 @@ class IntakeTests(unittest.TestCase):
             self.infos[cid] = dict(frames=frames, width=832, height=480, fps=15.0, duration=frames/15, codec='h264', timestamps=[0.0, (frames-1)/15])
         write_csv(self.raw/'runs.csv', worker.FIELDS, rows)
         self.source_sha = sha256(self.raw/'runs.csv')
+        self.save(self.reference/'verification.json', {'source_runs_sha256': self.source_sha})
         self.addCleanup(patch.stopall)
         patch.object(intake, 'REFERENCE', self.reference).start()
+        patch.object(intake, 'PUBLISHED_RECORDS', self.reference).start()
         patch.object(intake, 'inspect_native', side_effect=self.inspect).start()
 
     def save(self, path, value):
@@ -132,6 +131,34 @@ class IntakeTests(unittest.TestCase):
     def test_changed_video_rejected_before_creating_delivery(self):
         (self.raw/'cases/case_0002/native.mp4').write_bytes(b'changed')
         with self.assertRaisesRegex(ValueError, 'Native bytes'):
+            self.export()
+        self.assertFalse(self.output.exists())
+
+    def test_coherently_replaced_video_and_source_records_are_rejected(self):
+        self.export()
+        folder = self.raw/'cases/case_0002'
+        (folder/'native.mp4').write_bytes(b'synthetic replacement native')
+        digest = sha256(folder/'native.mp4')
+        report = json.loads((folder/'run.json').read_text())
+        report['native']['sha256'] = digest
+        self.save(folder/'run.json', report)
+        fields, rows, _ = read_csv(self.raw/'runs.csv')
+        rows[1]['video_sha256'] = digest
+        replacement = self.raw/'replacement.csv'
+        write_csv(replacement, fields, rows)
+        replacement.replace(self.raw/'runs.csv')
+        rejected = self.root/'rejected-delivery'
+        with patch.object(intake, 'inspect_native') as decode:
+            with self.assertRaisesRegex(ValueError, 'published output records'):
+                intake.export(self.raw, self.cases, rejected)
+            with self.assertRaisesRegex(ValueError, 'published output records'):
+                intake.verify(self.raw, self.cases, self.output)
+        decode.assert_not_called()
+        self.assertFalse(rejected.exists())
+
+    def test_missing_published_anchor_is_rejected_before_export(self):
+        (self.reference/'verification.json').unlink()
+        with self.assertRaisesRegex(ValueError, 'Missing or unsafe retained path'):
             self.export()
         self.assertFalse(self.output.exists())
 
@@ -183,6 +210,23 @@ class IntakeTests(unittest.TestCase):
              patch.object(media, 'binary', return_value='synthetic_ffmpeg'), patch.object(media.subprocess, 'check_output', return_value='synthetic FFmpeg version'):
             result = media.prepare(self.cases, runs, self.root/'synthetic-four-model-handoff', frozen_outputs=True)
         self.assertEqual(result, {'items': 96, 'success': 96})
+
+
+class PublishedAnchorTests(unittest.TestCase):
+    def test_published_anchor_matches_retained_original_csv_and_batch(self):
+        published = intake.document(intake.PUBLISHED_RECORDS/'verification.json')
+        self.assertEqual(sha256(intake.PUBLISHED_RECORDS/'source/runs.csv'), published['source_runs_sha256'])
+        self.assertEqual(sha256(intake.REFERENCE/'batch.json'), published['source_batch_sha256'])
+
+
+class TemporaryRootTests(unittest.TestCase):
+    def test_fixture_uses_system_temp_directory_independently_of_checkout_depth(self):
+        fixture = IntakeTests('test_portable_table_preserves_original_status_bytes_and_reused_origin')
+        self.addCleanup(fixture.doCleanups)
+        # A shallow fictitious path catches parent indexing without touching it.
+        with patch(__name__ + '.__file__', '/fixture.py'):
+            fixture.setUp()
+        self.assertEqual(fixture.root.parent, Path(tempfile.gettempdir()).resolve())
 
 
 class RealDecoderTest(unittest.TestCase):

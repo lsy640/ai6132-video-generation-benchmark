@@ -17,6 +17,7 @@ WEIGHT_ID = 'meituan-longcat/LongCat-Video'
 WEIGHT_REVISION = '03b55529b1d1d4045f5fbe14d65c8c6e8116b278'
 SOURCE_REVISION = '58eb336edc5c8c63389838727e40b8c18434e54e'
 REFERENCE = Path(__file__).parent / 'frozen'
+PUBLISHED_RECORDS = Path(__file__).resolve().parents[2] / '02-pilot/tc2/longcat24-records'
 FIELDS = ['case_id', 'category', 'model_id', 'phase', 'seed', 'source_frame_num', 'target_frames',
           'status', 'source_status', 'origin', 'weight_version', 'weight_revision', 'upstream_commit',
           'config', 'config_sha256', 'image_sha256', 'native_video', 'video_sha256',
@@ -89,6 +90,9 @@ def audit_source(raw, cases_csv, decoder='ffmpeg', videos=None):
     require(completion['all_succeeded'] and completion['counts'] == {'succeeded': 24}, 'Source batch is incomplete')
     _, source_rows, source_csv_sha = read_csv(retained(raw, 'runs.csv'))
     require([r['case_id'] for r in source_rows] == [c['case_id'] for c in canonical], 'Source must retain all 24 canonical rows in order')
+    published = document(retained(PUBLISHED_RECORDS, 'verification.json'))
+    require(source_csv_sha == published['source_runs_sha256'],
+            'Source runs.csv differs from the published output records')
     require(sorted(p.name for p in (raw/'cases').iterdir() if p.is_dir()) == sorted(c['case_id'] for c in canonical),
             'Case directories do not match the selected 24 cases')
     rows, evidence, sources = [], {}, {}

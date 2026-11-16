@@ -10,6 +10,7 @@
 | --- | --- |
 | `frozen/engine.py` | 实际主批次生成引擎：T5、DiT、VAE分进程加载；完整native及历史调试evaluation导出 |
 | `frozen/worker.py`、`wave.slurm`、`batch.json` | 实际两段式23条新生成、1条长片导入、状态汇总及打包程序与配置 |
+| `worker.py` | 新重建批次的调度程序：绑定绝对图片路径、将耗尽重试的中断记录转为明确失败、通过退出码报告最终失败 |
 | `frozen/trial_engine.py`、`trial_config.json` | case_0001成功试跑的原代码和配置，与原始代码SHA证明绑定 |
 | `frozen/runtime.json`、`weights-manifest.json`、`environment-freeze.txt` | 官方源码、原始/BF16权重及真实依赖版本凭据 |
 | `frozen/prepare_assets.py`、`prepare_assets.slurm` | 资产下载、逐分片BF16转换与安装归档；Slurm副本已包含setuptools依赖修复 |
@@ -78,13 +79,17 @@ bash 03-generation/longcat_video/submit_batch.sh \
   "$LONGCAT_ROOT/batches/replay-shared24-new"
 ```
 
-新批次仅对worker的图片路径与Slurm运行根目录进行绑定，重新记录完整代码哈希，历史engine字节不变。两作业先held提交，写入job IDs后release；finish依赖afterany，先接收未完成短片再运行5条剩余长片，最终输出24行状态、完整校验与tar.gz。最多2个submitted作业、1块GPU，每段最多6小时。关闭本机、VPN、Codex不影响已提交作业；进度查询和本地下载需重连。
+新批次复制当前`worker.py`并绑定Slurm运行根目录，重新记录完整代码哈希，历史engine字节不变。两作业先held提交，写入job IDs后release；finish依赖afterany，先接收未完成短片再运行5条剩余长片，最终输出24行状态、完整校验与tar.gz。最多2个submitted作业、1块GPU，每段最多6小时。关闭本机、VPN、Codex不影响已提交作业；进度查询和本地下载需重连。
 
 成功样本不会重跑。历史worker允许同seed的资源错误切换CPU卸载后最多一次技术恢复，保留每次尝试；实际已交批次所有完成尝试均为1次。流程故障/超时仍可能造成失败，记录真实状态，只有24条均成功才标记all_succeeded。
+
+新worker先恢复已验证成功的attempt，再检查剩余次数；两次尝试均未成功时，将遗留的`running/interrupted`记录转为`failed`，保留原状态、作业ID、错误和全部attempt。最终收尾将其他非终态也明确记为失败，照常保留24行记录并打包；存在失败时finish作业退出码为1，全成功为0。历史`frozen/worker.py`与已提交批次保持不变；要使用修复，应在新目录重新运行重建入口，不能替换旧批次中受哈希绑定的代码。
 
 ## B接收与字段适配
 
 正常交接使用已合并的记录目录，加单独提供的native视频。完整原始结果包需要额外审计时，下面的适配器严格核对本次已发布冻结批次、源码、原始/转换权重凭据、canonical图片、逐条请求/结果/CSV、16步记录和视频字节；不会访问旧账号的远端绝对路径。
+
+源`runs.csv`还必须逐字节匹配仓库`longcat24-records/verification.json`中的`source_runs_sha256`，然后才解码原片。该摘要来自已发布记录，不接受接收包自报的替代值；同时改写视频、run.json和包内CSV也会被拒绝。应保留完整仓库的记录目录；缺少已发布锚点时验收失败。
 
 ```bash
 export AI6132_CPU_PYTHON=/absolute/path/to/cpu-env/bin/python
@@ -106,7 +111,7 @@ B的四模型`--runs`参数中，对应项为`longcat-video-480p-16step-distill=
 sbatch 03-generation/longcat_video/tools_cpu.slurm test
 ```
 
-本代码补交包含18项本地CPU回归：9项接收/来源/视频篡改/真实PyAV解码及四模型media格式集成，4项路径回放/版本/不可覆盖/冻结源码/批次重建，5项原worker的已成功不重抽、资源恢复、故障保留及24行归档回归。新wrapper不冒充重新测量过的GPU代码；原engine和worker的真实GPU证据来自已完成的24条。
+当前包含25项CPU回归，覆盖接收/来源/协同篡改/缺失锚点/真实PyAV解码及四模型media格式集成、临时目录独立于checkout深度、路径回放/版本/不可覆盖/冻结源码/批次重建，以及当前worker的成功不重抽、资源恢复、重试耗尽终态、末次成功恢复、最终退出码和24行归档。测试临时文件使用系统临时目录，可在提交前通过`TMPDIR`指定个人目录。新wrapper和worker的CPU验证不代表重跑GPU测量；历史24条生成证据保持独立。
 
 原24条实测：短片均值447.359秒，长片均值3747.219秒；逐条elapsed总和30535.774秒，含加载、生成、导出与D解码检查。批量23条作业总墙钟约7小时27分钟，另有此前1条长片。详见已合并的[记录与计时说明](../../02-pilot/tc2/longcat24-records/README.md)。Cog20条暂停产物单独保留，不作为本模型完成数。
 

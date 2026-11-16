@@ -5,21 +5,19 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-spec = importlib.util.spec_from_file_location('longcat_worker', Path(__file__).parent / 'frozen/worker.py')
+spec = importlib.util.spec_from_file_location('longcat_worker', Path(__file__).parent / 'worker.py')
 w = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(w)
 
 
 class PreservationChecks(unittest.TestCase):
     def setUp(self):
-        root = Path(__file__).resolve().parents[1] / 'tmp'
-        root.mkdir(exist_ok=True)
-        self.temp = tempfile.TemporaryDirectory(prefix='longcat-check-', dir=root)
+        self.temp = tempfile.TemporaryDirectory(prefix='longcat-check-')
         self.batch = Path(self.temp.name)
         self.case = {'case_id': 'case_0002', 'category': 'human', 'prompt': 'walk forward', 'seed': '42',
                      'source_frame_num': '128', 'target_frames': '129', 'image_path': 'dataset/input.jpg'}
         self.receipt = {'images': {'case_0002': {'sha256': 'image-hash'}}}
-        self.config = {'batch_id': 'test', 'resource_attempt_limit': 2,
+        self.config = {'batch_id': 'test', 'resource_attempt_limit': 2, 'input_root': str(self.batch),
                        'case_timeout_seconds': {'129': 1800, '513': 7200},
                        'memory': {'short_offload_blocks': 0, 'long_offload_blocks': 40, 'oom_fallback_blocks': 40},
                        'profile': {'model_id': 'longcat', 'model_revision': 'model-sha', 'source_revision': 'source-sha',
@@ -91,6 +89,53 @@ class PreservationChecks(unittest.TestCase):
         run.assert_not_called()
         self.assertEqual(w.read(self.batch / 'cases/case_0002/result.json')['status'], 'succeeded')
 
+    def test_exhausted_interrupted_attempts_become_failed_without_reroll(self):
+        folder = self.batch/'cases/case_0002'
+        for number in (1, 2):
+            attempt = folder/f'attempts/attempt_{number:02d}'
+            attempt.mkdir(parents=True)
+            (attempt/'worker.log').write_text('retained interrupted attempt')
+        for status in ('running', 'interrupted'):
+            with self.subTest(status=status):
+                w.write(folder/'result.json', {'status': status, 'attempt_count': 2, 'slurm_job_id': 'original-job'})
+                with patch.object(w, 'execute_engine') as run:
+                    w.run_case(self.batch, self.config, self.case, self.receipt)
+                    result = w.read(folder/'result.json')
+                    w.run_case(self.batch, self.config, self.case, self.receipt)
+                run.assert_not_called()
+                self.assertEqual(result['status'], 'failed')
+                self.assertEqual(result['previous_status'], status)
+                self.assertEqual(result['slurm_job_id'], 'original-job')
+                self.assertTrue(result['attempt_limit_exhausted'])
+                self.assertEqual(result, w.read(folder/'result.json'))
+        self.assertEqual(len(list((folder/'attempts').glob('attempt_*'))), 2)
+        self.assertTrue((folder/'attempts/attempt_02/worker.log').exists())
+
+    def test_validated_last_attempt_is_promoted_even_when_retry_limit_is_reached(self):
+        folder = self.batch/'cases/case_0002'
+        (folder/'attempts/attempt_01').mkdir(parents=True)
+        attempt = folder/'attempts/attempt_02'
+        attempt.mkdir()
+        request = attempt/'case-config.json'
+        w.write(request, w.request_for(self.config, self.case, self.receipt))
+        self.success([], {'LONGCAT_CASE_OUTPUT': str(attempt), 'LONGCAT_CASE_CONFIG': str(request)}, None, 1800)
+        w.write(folder/'result.json', {'status': 'interrupted', 'attempt_count': 2})
+        with patch.object(w, 'execute_engine') as run:
+            w.run_case(self.batch, self.config, self.case, self.receipt)
+        run.assert_not_called()
+        self.assertEqual(w.read(folder/'result.json')['status'], 'succeeded')
+
+    def test_finish_wave_returns_nonzero_when_results_include_failures(self):
+        for succeeded, expected in ((False, 1), (True, 0)):
+            with self.subTest(all_succeeded=succeeded), \
+                 patch.object(w.sys, 'argv', ['worker.py', '--batch', str(self.batch), '--wave', 'finish']), \
+                 patch.object(w, 'load_batch', return_value=({'short_order': [], 'long_order': []}, [], {})), \
+                 patch.object(w, 'save_runtime_provenance'), patch.object(w, 'import_prior'), \
+                 patch.object(w, 'collect', return_value={}), patch.object(w, 'write'), \
+                 patch.object(w.signal, 'signal'), \
+                 patch.object(w, 'finalize', return_value={'all_succeeded': succeeded}):
+                self.assertEqual(w.main(), expected)
+
     def test_export_retains_all_24_rows_and_usable_hardlinks_including_failure(self):
         import csv
         import tarfile
@@ -104,7 +149,7 @@ class PreservationChecks(unittest.TestCase):
         with patch.object(w, 'execute_engine', side_effect=self.success):
             for case in cases[:-1]:
                 w.run_case(self.batch, self.config, case, receipt)
-        w.write(self.batch / 'cases/case_0024/result.json', {'status': 'failed', 'error': 'retained failure'})
+        w.write(self.batch / 'cases/case_0024/result.json', {'status': 'interrupted', 'error': 'retained interruption'})
         original = w.validate_report
         def validate(folder, report, expected, decode=False):
             return original(folder, report, expected, decode=False)
@@ -113,6 +158,9 @@ class PreservationChecks(unittest.TestCase):
         completion = w.read(self.batch / 'COMPLETION.json')
         self.assertFalse(completion['all_succeeded'])
         self.assertEqual(completion['counts'], {'failed': 1, 'succeeded': 23})
+        failed = w.read(self.batch/'cases/case_0024/result.json')
+        self.assertEqual(failed['previous_status'], 'interrupted')
+        self.assertIn('retained interruption', failed['error'])
         export = w.read(self.batch / 'EXPORT_READY.json')
         self.assertEqual(w.sha(Path(export['archive'])), export['sha256'])
         extract = self.batch / 'extracted'
@@ -123,7 +171,7 @@ class PreservationChecks(unittest.TestCase):
         with (output / 'runs.csv').open(newline='') as f:
             rows = list(csv.DictReader(f))
         self.assertEqual(len(rows), 24)
-        self.assertEqual(rows[-1]['failure_reason'], 'retained failure')
+        self.assertIn('retained interruption', rows[-1]['failure_reason'])
         self.assertTrue((output / 'cases/case_0001/native.mp4').exists())
         self.assertEqual(w.sha(output / 'cases/case_0001/native.mp4'), rows[0]['video_sha256'])
 

@@ -51,6 +51,8 @@ class ReplayPreparationTests(unittest.TestCase):
         self.assertEqual(sha256(out/'code/engine.py'),sha256(run_case.HERE/'frozen/engine.py'))
         self.assertEqual(config['reuse'],{'case_0001':str(source)})
         self.assertIn('Path(config[\'input_root\'])',(out/'code/worker.py').read_text())
+        self.assertEqual(sha256(out/'code/worker.py'), sha256(run_case.HERE/'worker.py'))
+        self.assertEqual(config['code_sha256']['worker.py'], sha256(run_case.HERE/'worker.py'))
         with self.assertRaisesRegex(ValueError,'new batch'):
             rebuild_batch.prepare(self.fixture.cases,self.runtime,source,out)
 
