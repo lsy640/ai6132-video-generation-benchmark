@@ -56,6 +56,8 @@ def human_module():
 
 
 def evaluation_inputs(manifest, mapping, phase='formal'):
+    if phase not in {'formal', 'pilot', 'diagnostic'}:
+        raise ValueError('Unknown evaluation phase')
     from .dataset import CATEGORIES
     rows = human_module().load_manifest(manifest, check_files=True)
     fields, links, _ = read_csv(mapping)
@@ -68,13 +70,15 @@ def evaluation_inputs(manifest, mapping, phase='formal'):
     keys = [(r['case_id'], r['model_id']) for r in links]
     if len(set(keys)) != len(keys):
         raise ValueError('Duplicate case/model mapping')
-    if phase == 'formal':
+    if phase in {'formal', 'diagnostic'}:
         from collections import Counter
         from .dataset import validate_profile
         models = {r['model_id'] for r in links}
         cases = {r['case_id'] for r in links}
-        if len(models) != 4 or len(cases) != 24 or len(rows) != 96:
+        if phase == 'formal' and (len(models) != 4 or len(cases) != 24 or len(rows) != 96):
             raise ValueError('Formal evaluation requires 24 cases x 4 models')
+        if phase == 'diagnostic' and (not 1 <= len(models) <= 4 or len(cases) != 24 or len(rows) != 24 * len(models)):
+            raise ValueError('Diagnostic evaluation requires every model to retain all 24 cases')
         for case_id in cases:
             group = [r for r in links if r['case_id'] == case_id]
             if {r['model_id'] for r in group} != models or len({(r['category'], r['target_frames']) for r in group}) != 1:

@@ -15,14 +15,13 @@
 
 set -euo pipefail
 if [[ -z "${SLURM_JOB_ID:-}" || $# -lt 1 ]]; then
-  printf 'Submit via sbatch: run_cpu.sh human-eval|make-smoke|validate-cases|dataset|media|vbench-cache|test [arguments]\n' >&2
+  printf 'Submit via sbatch: run_cpu.sh human-xlsx|human-eval|validate-cases|import-ltx|dataset|assets|media|vbench-cache [arguments]\n' >&2
   exit 2
 fi
 AI6132_TASK="$1"
 shift
 case "$AI6132_TASK" in
-  human-eval|make-smoke|validate-cases|import-ltx|dataset|media|vbench-cache|assets) ;;
-  test) [[ $# -eq 0 ]] || { printf 'test takes no arguments\n' >&2; exit 2; } ;;
+  human-xlsx|human-eval|validate-cases|import-ltx|dataset|media|vbench-cache|assets) ;;
   *) printf 'Unknown CPU task: %s\n' "$AI6132_TASK" >&2; exit 2 ;;
 esac
 AI6132_ROOT="${AI6132_ROOT:-$HOME/ai6132-c}"
@@ -39,6 +38,7 @@ eval "$(conda shell.bash hook)"
 conda activate "$AI6132_CPU_ENV"
 set -u
 export PYTHONUNBUFFERED=1
+export PYTHONUTF8=1
 export PYTHONDONTWRITEBYTECODE=1
 export CUDA_VISIBLE_DEVICES=""
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
@@ -47,8 +47,8 @@ python -c 'import sys; assert sys.version_info >= (3, 10), "Python 3.10+ require
 printf 'Job: %s; node: %s; task: %s; environment: %s\n' \
   "$SLURM_JOB_ID" "$(hostname)" "$AI6132_TASK" "$CONDA_PREFIX"
 case "$AI6132_TASK" in
+  human-xlsx) python 05-human-evaluation/human_workbooks.py "$@" ;;
   human-eval) python 05-human-evaluation/human_eval.py "$@" ;;
-  make-smoke) python 02-pilot/tc2/make_smoke_case.py "$@" ;;
   validate-cases) python 03-generation/ltx_video/run_cases.py "$@" --validate-only ;;
   import-ltx) python 03-generation/ltx_video/import_completed.py "$@" ;;
   dataset) python -m ai6132_benchmark.dataset "$@" ;;
@@ -57,10 +57,5 @@ case "$AI6132_TASK" in
   vbench-cache)
     [[ " $* " == *" --receipt-cache "* ]] || { printf 'CPU mode only writes a prepared-cache receipt.\n' >&2; exit 2; }
     python -m ai6132_benchmark.vbench "$@"
-    ;;
-  test)
-    python -m unittest discover -s 03-generation/ltx_video -p 'test_*.py' -v
-    python -m unittest discover -s 05-human-evaluation -p 'test_*.py' -v
-    python -m unittest discover -s tests -p 'test_*.py' -v
     ;;
 esac

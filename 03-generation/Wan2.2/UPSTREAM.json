@@ -97,7 +97,6 @@
     "wan/__init__.py": "Lazy pipeline imports; TI2V does not eagerly import S2V/Animate extras",
     ".gitignore": "Exclude upstream example payloads and generated batch directories"
   },
-  "integration_entrypoint": "benchmark.py",
-  "historical_A_generation_linkage": "Not established by this source upload; retain the prior 10-step and 125/509-frame delivery separately",
-  "demo_payloads": "Supplied examples remain local and are excluded from the source integration"
+  "generation_entrypoint": "generate.py (upstream CLI); the reported videos used --task ti2v-5B with 10 sampling steps",
+  "removed_from_this_copy": "examples/, assets/ and tests/ (demo media, README images and multi-GPU test scripts) are listed above for provenance but are not kept in this repository"
 }

@@ -29,10 +29,13 @@ conda activate "$AI6132_GPU_ENV"
 set -u
 export PYTHONPATH="$AI6132_CODE${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONUNBUFFERED=1
+export PYTHONUTF8=1
 export PYTHONDONTWRITEBYTECODE=1
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-1}"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 export TOKENIZERS_PARALLELISM=false
 nvidia-smi
+# qwen runs the reported protocol: qwen_v3 with the fast frame cache from qwen_fast.
+[[ "$AI6132_TASK" == qwen ]] && AI6132_TASK=qwen_fast
 python -m "ai6132_benchmark.$AI6132_TASK" "$@"

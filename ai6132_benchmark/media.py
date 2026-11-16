@@ -84,14 +84,22 @@ def failure(row):
     return 'generation_failed', 'generation_error'
 
 
-def prepare(cases, runs, output, frozen_outputs=False):
+def prepare(cases, runs, output, frozen_outputs=False, phase='formal', native_frame_deviation_reason=None):
     """Only call after the group freezes delivery; missing cases remain explicit."""
     if not frozen_outputs:
         raise ValueError('Use --outputs-frozen only once all deliveries are frozen')
     rows, case_receipt = load_canonical(cases, decode=True)
     by_case = {r['case_id']: r for r in rows}
-    if len(runs) != 4:
+    if phase not in {'formal', 'diagnostic'}:
+        raise ValueError('Unknown media preparation phase')
+    if native_frame_deviation_reason is not None:
+        if phase != 'diagnostic' or not native_frame_deviation_reason.strip():
+            raise ValueError('Native frame deviations require an explicit diagnostic reason')
+    if phase == 'formal' and len(runs) != 4:
         raise ValueError('Supply exactly four distinct MODEL=RUNS.csv inputs')
+    if phase == 'diagnostic' and not 1 <= len(runs) <= 4:
+        raise ValueError('Diagnostic preparation accepts one to four complete model cohorts')
+    expected_items = len(rows) * len(runs)
     output = Path(output).resolve()
     if output.exists():
         raise ValueError('Use a new handoff directory; IDs and retained originals must not be overwritten')
@@ -134,7 +142,8 @@ def prepare(cases, runs, output, frozen_outputs=False):
     random.Random(seed).shuffle(keys)
     mapping, anonymous, summary = [], [], []
     write_json(private / 'intake.json', {'cases': case_receipt, 'runs_sha256': source_hashes,
-                                       'anonymous_seed': seed, 'expected_items': 96,
+                                       'anonymous_seed': seed, 'expected_items': expected_items, 'phase': phase,
+                                       'native_frame_deviation_reason': native_frame_deviation_reason,
                                        'ffmpeg_version': subprocess.check_output([binary('ffmpeg'), '-version'], text=True).splitlines()[0]})
     for model, filename in runs.items():
         target = private / f'{model}.runs.csv'
@@ -166,7 +175,16 @@ def prepare(cases, runs, output, frozen_outputs=False):
                     audit['decode_error'] = f'{type(exc).__name__}: {exc}'
                 else:
                     if info['frames'] != int(case['target_frames']):
-                        raise ValueError('Native frame count differs from the frozen case protocol')
+                        if (not native_frame_deviation_reason
+                                or record.get('native_frame_deviation_reason') != native_frame_deviation_reason
+                                or int(record.get('native_frames', -1)) != info['frames']
+                                or int(record.get('target_frames', -1)) != int(case['target_frames'])):
+                            raise ValueError('Native frame count differs from the frozen case protocol')
+                        audit['protocol_deviation'] = {
+                            'planned_target_frames': int(case['target_frames']),
+                            'actual_native_frames': info['frames'],
+                            'reason': native_frame_deviation_reason,
+                            'scope': 'diagnostic_only; preserve full delivered duration'}
                     # Failures here are operational errors, never counted against a generator.
                     before, after = normalize(source, public / 'videos' / f'{clip}.mp4')
                     audit.update(native=before, score_copy=after, native_sha256=sha256(source),
@@ -188,17 +206,19 @@ def prepare(cases, runs, output, frozen_outputs=False):
                       'peak_vram_reserved_mib', 'failure_reason', 'handoff_status', 'handoff_failure_reason']
     write_csv(private / 'generation_summary.csv', summary_fields, summary)
     write_csv(public / 'anonymous_clips.csv', PUBLIC_FIELDS, anonymous)
-    write_json(output / 'COMPLETE.json', {'items': 96, 'files': {
+    write_json(output / 'COMPLETE.json', {'items': expected_items, 'phase': phase, 'files': {
         str(p.relative_to(output)): sha256(p) for p in sorted(output.rglob('*')) if p.is_file()}})
-    return {'items': 96, 'success': sum(r['status'] == 'success' for r in anonymous)}
+    return {'items': expected_items, 'success': sum(r['status'] == 'success' for r in anonymous)}
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--cases', type=Path, required=True)
-    p.add_argument('--runs', nargs=4, required=True, metavar='MODEL=CSV')
+    p.add_argument('--runs', nargs='+', required=True, metavar='MODEL=CSV')
+    p.add_argument('--phase', choices=['formal', 'diagnostic'], default='formal')
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--outputs-frozen', action='store_true')
+    p.add_argument('--native-frame-deviation-reason', help='Diagnostic-only exception; each deviating runs row must declare the same reason and decoded frame count')
     args = p.parse_args()
     runs = {}
     for entry in args.runs:
@@ -206,7 +226,8 @@ def main():
         if not sep or not path or name in runs:
             p.error('Provide four distinct MODEL=CSV inputs')
         runs[name] = path
-    print(json.dumps(prepare(args.cases, runs, args.out, args.outputs_frozen)))
+    print(json.dumps(prepare(args.cases, runs, args.out, args.outputs_frozen, args.phase,
+                             args.native_frame_deviation_reason)))
 
 
 if __name__ == '__main__':

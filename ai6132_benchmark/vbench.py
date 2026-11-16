@@ -8,6 +8,7 @@ from pathlib import Path
 import socket
 import subprocess
 import sys
+import time
 from unittest.mock import patch
 
 from .dataset import SUBJECT
@@ -46,6 +47,33 @@ def no_downloads():
         yield
 
 
+@contextlib.contextmanager
+def local_dino(cache):
+    """Adapt upstream hub metadata to official, fully local DINO construction.
+
+    VBench passes its path/resolution bookkeeping to hubconf, whereas the
+    official DINO constructor forwards unknown kwargs to VisionTransformer.
+    DreamSim also requests this same backbone through the GitHub hub alias.
+    Both resolve to the pinned local source and the same official checkpoint.
+    """
+    import torch
+    cache = Path(cache).resolve()
+    repository = cache / 'dino_model/facebookresearch_dino_main'
+    checkpoint = cache / 'dino_model/dino_vitbase16_pretrain.pth'
+    original = torch.hub.load
+    def load(repo_or_dir, model, *args, **kwargs):
+        if (model != 'dino_vitb16' or args or (str(repo_or_dir) != 'facebookresearch/dino:main'
+                and Path(repo_or_dir).resolve() != repository)):
+            raise ValueError('Unexpected hub model; only the prepared DINO backbone is allowed')
+        if kwargs.get('path') and Path(kwargs['path']).resolve() != checkpoint:
+            raise ValueError('DINO checkpoint differs from the prepared cache')
+        backbone = original(str(repository), model, source='local', pretrained=False)
+        backbone.load_state_dict(torch.load(checkpoint, map_location='cpu', weights_only=True), strict=True)
+        return backbone
+    with patch.object(torch.hub, 'load', side_effect=load):
+        yield
+
+
 class OfficialVBench:
     def __init__(self, upstream, cache):
         self.upstream, self.cache = Path(upstream).resolve(), Path(cache).resolve()
@@ -59,16 +87,16 @@ class OfficialVBench:
         sys.path.insert(0, str(self.upstream))
         from vbench2_beta_i2v import VBenchI2V
         engine = VBenchI2V('cuda', str(self.upstream / 'vbench2_beta_i2v/vbench2_i2v_full_info.json'), str(directory))
-        # DreamSim's default relative cache also stays inside the receipted tree.
+        # DreamSim's relative ./models cache stays inside the receipted tree.
         previous = Path.cwd()
         try:
             os.chdir(self.cache)
-            with no_downloads():
+            with no_downloads(), local_dino(self.cache):
                 engine.evaluate(videos_path=str(video), name='result', dimension_list=[dimension],
-                                custom_image_folder=str(image), mode='custom_input', local=True, resolution='16-9')
+                                custom_image_folder=str(Path(image).parent), mode='custom_input', local=True, resolution='16-9')
         finally:
             os.chdir(previous)
-        return json.loads((directory / 'result_eval_results.json').read_text())
+        return json.loads((directory / 'result_eval_results.json').read_text(encoding='utf-8'))
 
 
 def cache_files(cache):
@@ -90,11 +118,12 @@ def run(manifest, mapping, output, upstream, commit, cache, cache_receipt, phase
         raise ValueError('VBench source must match the fixed commit')
     if subprocess.check_output(['git', '-C', str(upstream), 'status', '--porcelain', '--untracked-files=no'], text=True).strip():
         raise ValueError('VBench tracked source has local changes')
-    assets = json.loads(Path(cache_receipt).read_text())
+    assets = json.loads(Path(cache_receipt).read_text(encoding='utf-8'))
     if not assets or assets != cache_files(cache):
         raise ValueError('VBench cache does not match its prepared SHA256 receipt')
     initial_cache_facts = cache_facts(cache)
     frozen = {'inputs': receipt, 'upstream_commit': commit, 'assets': assets, 'phase': phase,
+              'environment': subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'], text=True),
               'source_sha256': sha256(__file__), 'io_sha256': sha256(Path(__file__).with_name('io.py')),
               'media_sha256': sha256(Path(__file__).with_name('media.py')),
               'protocol': 'custom_input/full duration/768x432/12fps/one sample per case-model'}
@@ -104,7 +133,7 @@ def run(manifest, mapping, output, upstream, commit, cache, cache_receipt, phase
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         batch = output / 'batch.json'
         if batch.exists():
-            if json.loads(batch.read_text()) != frozen:
+            if json.loads(batch.read_text(encoding='utf-8')) != frozen:
                 raise ValueError('VBench frozen batch changed')
         else:
             if any(p.name != '.lock' for p in output.iterdir()):
@@ -140,11 +169,14 @@ def run(manifest, mapping, output, upstream, commit, cache, cache_receipt, phase
                     reference.symlink_to(image)
                     raw_dir = directory / 'raw'
                     raw_dir.mkdir()
+                    started = time.perf_counter()
                     raw = backend(staged, reference, dimension, raw_dir)
                     if cache_facts(cache) != initial_cache_facts:
                         raise ValueError('Model cache changed during inference; outputs are not validated')
                     write_json(raw_dir / 'retained.json', raw)
-                    write_json(result, {**item, 'value': extract_result(raw, dimension, staged), 'status': 'success'})
+                    write_json(result, {**item, 'value': extract_result(raw, dimension, staged),
+                                        'status': 'success', 'elapsed_seconds': time.perf_counter() - started})
+                    print(json.dumps({'clip_id': row['clip_id'], 'dimension': dimension, 'status': 'success'}), flush=True)
                 except Exception as exc:
                     write_json(result, {**item, 'status': 'technical_failure', 'failure_reason': f'{type(exc).__name__}: {exc}'})
                     raise
@@ -152,7 +184,7 @@ def run(manifest, mapping, output, upstream, commit, cache, cache_receipt, phase
             for row, dimension in tasks:
                 directory = output / row['clip_id'] / dimension
                 result = directory / 'result.json'
-                results.append(json.loads(result.read_text()) if result.exists() else {
+                results.append(json.loads(result.read_text(encoding='utf-8')) if result.exists() else {
                     **links[row['clip_id']], 'dimension': dimension,
                     'status': 'incomplete' if directory.exists() else 'not_started'})
             temporary = output / 'vbench_results.csv.new'
@@ -169,7 +201,7 @@ def main():
     for name in ('manifest', 'clip-map', 'out', 'upstream', 'cache-receipt'):
         p.add_argument('--' + name, type=Path)
     p.add_argument('--commit')
-    p.add_argument('--phase', choices=['formal', 'pilot'], default='formal')
+    p.add_argument('--phase', choices=['formal', 'pilot', 'diagnostic'], default='formal')
     args = p.parse_args()
     if args.receipt_cache:
         if args.receipt_cache.exists():

@@ -1,0 +1,21 @@
+dimension,human_metric,member_slot,n_pairs,spearman_rho,limitation
+i2v_subject,reference_fidelity,all,64,0.5039882226454694,descriptive; fixed cases repeated across models; no significance inference
+i2v_subject,reference_fidelity,A,16,0.614398487337616,descriptive; fixed cases repeated across models; no significance inference
+i2v_subject,reference_fidelity,B,16,0.5174046443855905,descriptive; fixed cases repeated across models; no significance inference
+i2v_subject,reference_fidelity,C,16,0.48401175572411914,descriptive; fixed cases repeated across models; no significance inference
+i2v_subject,reference_fidelity,D,16,0.6545984146472449,descriptive; fixed cases repeated across models; no significance inference
+i2v_background,background_detail_retention,all,32,0.24027328611900134,descriptive; fixed cases repeated across models; no significance inference
+i2v_background,background_detail_retention,A,8,0.6137857701752955,descriptive; fixed cases repeated across models; no significance inference
+i2v_background,background_detail_retention,B,8,0.7483357769119656,descriptive; fixed cases repeated across models; no significance inference
+i2v_background,background_detail_retention,C,8,0.629940788348712,descriptive; fixed cases repeated across models; no significance inference
+i2v_background,background_detail_retention,D,8,0.6424160744396211,descriptive; fixed cases repeated across models; no significance inference
+motion_smoothness,motion_naturalness,all,64,0.37204428450520177,descriptive; fixed cases repeated across models; no significance inference
+motion_smoothness,motion_naturalness,A,16,0.39853779626941943,descriptive; fixed cases repeated across models; no significance inference
+motion_smoothness,motion_naturalness,B,16,0.06472791991423374,descriptive; fixed cases repeated across models; no significance inference
+motion_smoothness,motion_naturalness,C,16,0.2769908049481516,descriptive; fixed cases repeated across models; no significance inference
+motion_smoothness,motion_naturalness,D,16,0.34427107316680766,descriptive; fixed cases repeated across models; no significance inference
+dynamic_degree,motion_naturalness,all,64,-0.06950401527424022,descriptive; fixed cases repeated across models; no significance inference
+dynamic_degree,motion_naturalness,A,16,-0.16582314288228836,descriptive; fixed cases repeated across models; no significance inference
+dynamic_degree,motion_naturalness,B,16,0.23953075479057984,descriptive; fixed cases repeated across models; no significance inference
+dynamic_degree,motion_naturalness,C,16,-0.30608741941421674,descriptive; fixed cases repeated across models; no significance inference
+dynamic_degree,motion_naturalness,D,16,-0.1285980859121099,descriptive; fixed cases repeated across models; no significance inference

@@ -24,3 +24,8 @@ ratings_*.csv
 clip_map.csv
 # A's original image payload stays local; manifests and code can be reviewed separately.
 /01-dataset/dataset/
+# Member deliveries contain native videos, logs, environment exports and private records.
+/video-output/
+# Human workbook submissions and distribution payloads remain private.
+ratings_*.xlsx
+/05-human-evaluation/output/

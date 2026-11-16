@@ -14,9 +14,8 @@ set -euo pipefail
 : "${AI6132_CPU_PYTHON:?set absolute CPU Python executable}"
 cd "${AI6132_CODE:-$SLURM_SUBMIT_DIR}"
 export PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=1
-TASK="${1:?test or rebuild-batch}"; shift
+TASK="${1:?rebuild-batch}"; shift
 case "$TASK" in
-  test) "$AI6132_CPU_PYTHON" -m unittest discover -s 03-generation/longcat_video -p 'test_*.py' -v ;;
   rebuild-batch) "$AI6132_CPU_PYTHON" 03-generation/longcat_video/rebuild_batch.py "$@" ;;
   *) exit 2 ;;
 esac

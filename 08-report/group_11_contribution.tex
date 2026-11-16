@@ -1,0 +1,81 @@
+% AI6132 Project 1 -- statement of member contributions (Group 11)
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=25mm,top=22mm,bottom=22mm]{geometry}
+\usepackage{newtxtext,newtxmath}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[colorlinks=true,linkcolor=accent,urlcolor=accent]{hyperref}
+
+\definecolor{accent}{HTML}{1F4E79}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt plus 1pt}
+\emergencystretch=1.5em
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\setlist{leftmargin=1.4em,itemsep=2pt,topsep=3pt,parsep=0pt}
+\titleformat{\section}{\large\bfseries}{}{0pt}{}
+\titlespacing*{\section}{0pt}{14pt plus 3pt}{5pt}
+\newcommand{\member}[4]{% role, name, matric number, model
+  \par\addvspace{9pt plus 2pt}%
+  \textbf{#2} \,(#3)\hfill\textcolor{accent}{Member #1 \,\textperiodcentered\, #4}\par\nobreak\vspace{-1pt}}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+  {\small\scshape AI6132 \,\textperiodcentered\, Project 1 \,\textperiodcentered\, Technical Review \,\textperiodcentered\, Group 11}\\[10pt]
+  {\LARGE\bfseries Statement of Member Contributions}\\[8pt]
+  {\normalsize Review of Image-to-Video Generation:\\
+   A Controlled Comparison of Four Open-Source Models}\\[8pt]
+  {\small College of Computing and Data Science, Nanyang Technological University \,\textperiodcentered\, November 2026}
+\end{center}
+\vspace{2pt}
+
+The project compares four open-source image-to-video models on the same 24 reference images and prompts. Each member was responsible for the generation pipeline of one model, rated all 96 generated videos independently, and took on one part of the shared evaluation and integration work. The entries below record, for each member, the model they were responsible for, the evaluation they completed and the integration work they took on.
+
+\member{A}{Luo Zhiyuan}{G2509624F}{Wan~2.2}
+\begin{itemize}
+  \item Set up the Wan2.2-TI2V-5B pipeline and generated its 24 videos (18 short and 6 long clips).
+  \item Maintained the shared test set of 24 VBench-I2V cases in 11 content categories, and fixed the reference images, prompts, case IDs, clip lengths and the seed used by all four models.
+  \item Rated all 96 videos independently on the four criteria of the human rubric.
+\end{itemize}
+
+\member{B}{Liu Shiyuan}{G2509682L}{HunyuanVideo~1.5}
+\begin{itemize}
+  \item Set up the HunyuanVideo-1.5 480p step-distilled I2V pipeline and generated its 24 videos.
+  \item Collected the generation logs of all four models, checked that all 96 videos decode completely, and produced the uniform scoring copies and the anonymised clip IDs.
+  \item Ran the VBench-I2V metrics and the Qwen3-VL judge on all 96 videos.
+  \item Integrated the results of all evaluations into the final report.
+  \item Rated all 96 videos independently on the four criteria of the human rubric.
+\end{itemize}
+
+\member{C}{Zhang Wei}{G2610110E}{LTX-Video}
+\begin{itemize}
+  \item Set up the LTX-Video 13B v0.9.8 distilled pipeline and generated its 24 videos.
+  \item Prepared the unified rating sheet, randomised the viewing order of each rater, and collected and checked the four submitted rating sheets.
+  \item Rated all 96 videos independently on the four criteria of the human rubric.
+\end{itemize}
+
+\member{D}{Zhang Mufan}{G2505269G}{LongCat-Video}
+\begin{itemize}
+  \item Set up the LongCat-Video pipeline with the CFG-step distillation LoRA and generated its 24 videos.
+  \item Merged the human ratings, the Qwen3-VL scores and the VBench-I2V metrics, and computed the inter-rater agreement.
+  \item Rated all 96 videos independently on the four criteria of the human rubric.
+  \item Submitted the report, this statement and the code package on behalf of the group.
+\end{itemize}
+
+\section{Work Shared by All Members}
+\begin{itemize}
+  \item Agreed on the evaluation plan, including the common test set, the generation protocol and the scoring rubric.
+  \item Delivered the original videos of their own model together with the run records and the frozen configuration.
+  \item Completed the human evaluation without seeing the ratings of the other members before submission. The four rating sheets contain 384 records and 1,536 scores in total.
+\end{itemize}
+
+\end{document}
