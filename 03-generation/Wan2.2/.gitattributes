@@ -1,0 +1,10 @@
+# Preserve upstream bytes and its existing formatting; new integration files use normal checks.
+wan/** -text -whitespace
+generate.py -text -whitespace
+README.md -text -whitespace
+INSTALL.md -text -whitespace
+requirements*.txt -text -whitespace
+pyproject.toml -text -whitespace
+Makefile -text -whitespace
+tests/test.sh -text -whitespace
+tests/README.md -text -whitespace

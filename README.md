@@ -65,7 +65,7 @@ Qwen开发检查54992已完成70/70有效视图，但仍漏检4个乱序对照�
 | --- | --- |
 | [`01-dataset/`](01-dataset/README.md) | 原始清单、规范清单与输入校验凭据 |
 | [`02-pilot/tc2/`](02-pilot/tc2/README.md) | 环境准备、SLURM 入口与验收记录 |
-| [`03-generation/`](03-generation/) | Hunyuan、LTX和LongCat生成、回放与交接工具 |
+| [`03-generation/`](03-generation/) | Wan2.2、Hunyuan、LTX和LongCat生成、回放与交接工具 |
 | [`ai6132_benchmark/`](ai6132_benchmark/) | 共享数据校验、Hunyuan 生成、视频处理及评估实现 |
 | [`04-vbench-evaluation/`](04-vbench-evaluation/README.md) | 全片预处理、匿名交接与 VBench 使用说明 |
 | [`05-human-evaluation/`](05-human-evaluation/README.md) | 人工盲评材料、评分模板与收表工具 |
@@ -105,7 +105,7 @@ sbatch 02-pilot/tc2/run_cpu.sh dataset --verify 01-dataset/cases.canonical.csv
 
 按下列顺序执行，各阶段使用独立输出目录并冻结输入、配置和版本：
 
-1. [Hunyuan 生成](03-generation/hunyuan_video/README.md)、[LTX 13B 生成与批次交接](03-generation/ltx_video/README.md)或 [LongCat 生成与交接](03-generation/longcat_video/README.md)。各成员交付同一规范的运行记录。
+1. [Wan2.2清单入口](03-generation/Wan2.2/BENCHMARK.md)、[Hunyuan生成](03-generation/hunyuan_video/README.md)、[LTX13B生成与交接](03-generation/ltx_video/README.md)或[LongCat生成与交接](03-generation/longcat_video/README.md)。各成员交付同一规范的运行记录。
 2. 汇总四模型输出，进行[全片验收、匿名副本制作与 VBench 评估](04-vbench-evaluation/README.md)。
 3. 按[人工评价流程](05-human-evaluation/README.md)分发每人独立的四维网页／Excel和96条匿名素材，D已补齐。一般流程B先交卷再运行[Qwen评估](06-vlm-evaluation/README.md)；本轮已授权提前运行诊断Qwen，该顺序变更保留在记录和报告中。
 4. 四份人评收齐后解盲，按 [PLAN.md](PLAN.md)整合结果与报告。
@@ -131,6 +131,8 @@ sbatch 03-generation/longcat_video/tools_cpu.slurm test
 ```
 
 已发布`d9987f3`候选的基础64项加LongCat25项，共89项通过；保留本地Qwen扩展的关联整合另通过68项，二者有重叠，不作为157项不同测试。详见[验证范围](02-pilot/tc2/VALIDATION.md#2026-11-16longcat审查修复与发布)。
+
+后续Wan2.2接入的55027通过Wan12项及上述89项，共101项回归；另以`sbatch 02-pilot/tc2/wan_cpu.sh test`运行Wan单独套件。新入口默认50步、129/513帧，历史A的10步／125-509帧产物保持独立；真实Wan GPU及513帧资源路径尚未验收，见[接入范围](03-generation/Wan2.2/BENCHMARK.md#验证证据)。
 
 ## 当前进度
 

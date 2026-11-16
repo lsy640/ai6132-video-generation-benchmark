@@ -16,6 +16,12 @@ sbatch --partition=MGPU-TC2 --qos=normal /path/to/inspect_gpu.sh
 
 查看 GPU 型号、显存、驱动和 `CUDA_VISIBLE_DEVICES`，沿用调度器分配的 GPU 编号。`--mem` 指系统内存。
 
+## Wan2.2 项目入口
+
+Wan TI2V-5B使用[`wan_cpu.sh`](wan_cpu.sh)的assets／prepare／test子命令，以及[`run_wan.sh`](run_wan.sh)的单案例GPU生成入口，不调用上游多卡测试脚本。CPU默认1CPU／2G／0GPU／30分钟，GPU默认4CPU／28G／1GPU／3小时，1节点、无固定nodelist；每次sbatch前仍须重新查询mytcinfo。个人环境由AI6132_CPU_ENV和AI6132_WAN_ENV显式指定。
+
+默认新formal50批次为50步、129/513帧；每个GPU作业只处理一个case-id，24行runs.csv保留未启动项，成功不重抽，失败／中断不自动重提。GPU资源和独立共同试跑仍需另行验收，CPU测试不能解锁真实生成可行性。历史A的10步125/509帧与新入口分开。完整路径、receipt与续跑边界见[Wan接入说明](../../03-generation/Wan2.2/BENCHMARK.md)。
+
 ## 建立基础环境
 
 `bootstrap_env.sh` 使用 `miniconda3/25.5.1` 模块，在 `AI6132_ROOT` 下建立 Python 3.10 环境，安装 FFmpeg、PyTorch 2.5.1 和 torchvision 0.20.1（CUDA 12.1 wheel），并检查 BF16 矩阵运算。已验证环境为 L40S / 驱动 570.148.08，详见 [验证记录](VALIDATION.md)。
