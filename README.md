@@ -1,69 +1,71 @@
 # AI6132 Video Generation Benchmark
 
+English | [简体中文](README.zh-CN.md)
+
 AI6132 Project 1 · Technical Review
 
-在相同首图、英文提示词和种子下，比较四个开源图生视频模型的首图保持、动作自然度、提示词遵循、背景细节保持与推理成本。评估结合四人人工评分、VBench-I2V 自动指标和 Qwen3-VL 评审，并分析三者之间的一致性。
+We compare four open-source image-to-video models using the same reference images, English prompts, and random seed. The benchmark covers reference fidelity, motion naturalness, prompt adherence, background detail preservation, and inference cost. Evaluation combines ratings from four human reviewers, VBench-I2V metrics, and Qwen3-VL judgments, with an analysis of agreement across the three approaches.
 
-最终报告：[`group_11_report.pdf`](08-report/Review_of_Image_to_Video_Generation/group_11_report.pdf)（源文件 [`main.tex`](08-report/Review_of_Image_to_Video_Generation/main.tex)），成员贡献说明：[`group_11_contribution.pdf`](08-report/group_11_contribution.pdf)
+Final report: [`group_11_report.pdf`](08-report/Review_of_Image_to_Video_Generation/group_11_report.pdf) ([LaTeX source](08-report/Review_of_Image_to_Video_Generation/main.tex)). Member contributions: [`group_11_contribution.pdf`](08-report/group_11_contribution.pdf).
 
-## 实验设计
+## Experimental Design
 
-24 个固定案例（VBench-I2V 16:9 子集，11 类；16 个主体案例、8 个背景案例），种子均为 42，每案例每模型生成一次，共 96 条视频。每模型 18 条短片（目标 129 帧）和 6 条长片（目标 513 帧，单次连续生成）。输入清单见 [`01-dataset/cases.canonical.csv`](01-dataset/cases.canonical.csv)。
+The benchmark uses 24 fixed cases from the VBench-I2V 16:9 subset, spanning 11 categories: 16 subject cases and 8 background cases. Each model generates one video per case with seed 42, producing 96 videos in total. Each model contributes 18 short clips (target: 129 frames) and 6 long clips (target: 513 frames, generated in a single continuous pass). See the [canonical input manifest](01-dataset/cases.canonical.csv).
 
-| 成员 | 模型 | 步数 | 原生分辨率／fps | 短／长帧数 |
+| Member | Model | Steps | Native Resolution / FPS | Frames (Short / Long) |
 | --- | --- | --- | --- | --- |
-| A | Wan2.2-TI2V-5B | 10 | 1248×704／24 | 125／509 |
-| B | HunyuanVideo-1.5 480p I2V step-distilled | 8 | 848×480／24 | 129／513 |
-| C | LTX-Video 13B v0.9.8 distilled | 7+3 | 768×432／24 | 129／513 |
-| D | LongCat-Video 480p + CFG-step 蒸馏 LoRA | 16 | 832×480／15 | 129／513 |
+| A | Wan2.2-TI2V-5B | 10 | 1248×704 / 24 | 125 / 509 |
+| B | HunyuanVideo-1.5 480p I2V step-distilled | 8 | 848×480 / 24 | 129 / 513 |
+| C | LTX-Video 13B v0.9.8 distilled | 7+3 | 768×432 / 24 | 129 / 513 |
+| D | LongCat-Video 480p + CFG-step distilled LoRA | 16 | 832×480 / 15 | 129 / 513 |
 
-已知协议偏差：A 以 10 步运行（默认 50 步）且每条少 4 帧；D 为 15 fps，相同帧数下物理时长更长。各模型步数、分辨率不同，结果比较的是这些具体配置。
+Known protocol deviations: A uses 10 steps (the default is 50) and produces 4 fewer frames per clip than the target. D runs at 15 fps, resulting in longer playback durations for the same frame count. Step counts and resolutions differ across models, so the results compare these specific configurations.
 
-## 主要结果
+## Main Results
 
-人工评分（每视频取四人中位数，再对 24 条求均值，1–5 分）：
+Human ratings use a 1–5 scale. For each video, we take the median of the four reviewers' scores, then average these medians across the 24 videos per model.
 
-| 模型 | 首图保持 | 动作自然度 | 提示词遵循 | 背景保持 | 短片耗时 (s) |
+| Model | Reference Fidelity | Motion Naturalness | Prompt Adherence | Background Preservation | Short-Clip Generation Time (s) |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Wan 2.2 | 3.79 | 2.96 | 4.08 | 3.42 | 464 |
 | HunyuanVideo 1.5 | 4.25 | 3.71 | 4.48 | 4.02 | 173 |
 | LTX-Video | **4.67** | **3.92** | **4.71** | **4.75** | **25** |
 | LongCat-Video | 4.00 | 3.69 | 4.15 | 3.88 | 447 |
 
-- 短片上四个模型接近；长片上只有 LTX-Video 保持稳定，Wan 2.2 和 LongCat-Video 的首图保持与背景保持均降到 2 分以下。
-- 四名评审的序数 Krippendorff α 为 0.54–0.66，属中等一致。
-- Qwen3-VL 在首图保持（ρ=0.60）和提示词遵循（ρ=0.51）上与人评相关，动作自然度与人评无相关（ρ=−0.06），动作分只作方法诊断。
-- VBench 相似度指标集中在 0.96–0.99，不能复现人评排序。
+- The four models perform similarly on short clips. Only LTX-Video remains stable on long clips; both Wan 2.2 and LongCat-Video fall below 2 for reference fidelity and background preservation.
+- Ordinal Krippendorff's α ranges from 0.54 to 0.66 across the four reviewers, indicating moderate agreement.
+- Qwen3-VL correlates with human ratings for reference fidelity (ρ=0.60) and prompt adherence (ρ=0.51), but shows no correlation for motion naturalness (ρ=−0.06). Its motion scores are used only to diagnose the evaluation method.
+- VBench similarity scores cluster between 0.96 and 0.99 and do not reproduce the human rankings.
 
-样本为单种子、24 个固定案例，结论限于本次配置。完整分析与局限见报告。
+These findings are limited to the tested configurations, with one seed and 24 fixed cases. See the report for the full analysis and limitations.
 
-## 仓库结构
+## Repository Structure
 
-| 路径 | 内容 |
+| Path | Contents |
 | --- | --- |
-| [`01-dataset/`](01-dataset/README.md) | 24 个案例的清单和参考图 |
-| [`02-pilot/tc2/`](02-pilot/tc2/README.md) | TC2 环境准备脚本、SLURM 作业入口和生成记录 |
-| [`03-generation/`](03-generation/) | 四个模型的生成代码、配置和交接工具 |
-| [`ai6132_benchmark/`](ai6132_benchmark/) | 共享数据校验、视频处理、VBench 与 Qwen 评估实现 |
-| [`04-vbench-evaluation/`](04-vbench-evaluation/README.md) | 评分副本制作与 VBench-I2V 评估 |
-| [`05-human-evaluation/`](05-human-evaluation/README.md) | 人工评分网页／Excel 工具、收表校验与四份评分表 |
-| [`06-vlm-evaluation/`](06-vlm-evaluation/README.md) | Qwen3-VL 评审协议 |
-| [`07-analysis/`](07-analysis/README.md) | 报告图表脚本 |
-| [`08-report/`](08-report/README.md) | LaTeX 报告、成员贡献说明和统计表 |
-| `video-output/` | 各成员交付的原片与运行记录（不纳入版本控制） |
+| [`01-dataset/`](01-dataset/README.md) | Manifest and reference images for the 24 cases |
+| [`02-pilot/tc2/`](02-pilot/tc2/README.md) | TC2 environment setup scripts, SLURM job entry points, and generation records |
+| [`03-generation/`](03-generation/) | Generation code, configurations, and handoff tools for the four models |
+| [`ai6132_benchmark/`](ai6132_benchmark/) | Shared data validation, video processing, and VBench and Qwen evaluation implementations |
+| [`04-vbench-evaluation/`](04-vbench-evaluation/README.md) | Preparation of evaluation copies and VBench-I2V evaluation |
+| [`05-human-evaluation/`](05-human-evaluation/README.md) | HTML/Excel rating tools, submission validation, and four completed rating forms |
+| [`06-vlm-evaluation/`](06-vlm-evaluation/README.md) | Qwen3-VL evaluation protocol |
+| [`07-analysis/`](07-analysis/README.md) | Scripts for generating report figures |
+| [`08-report/`](08-report/README.md) | LaTeX report, member contribution statement, and statistical tables |
+| `video-output/` | Native videos and run records delivered by each member (excluded from version control) |
 
-原始图片、模型权重、生成视频和匿名映射不纳入版本控制。实验协议与评分量表见 [PLAN.md](PLAN.md)。
+Original images, model weights, generated videos, and mappings between anonymous IDs and models are excluded from version control. See [PLAN.md](PLAN.md) for the experimental protocol and scoring rubric.
 
-## 运行
+## Running the Benchmark
 
-在 NTU TC2 上，Head Node 只用于编辑、Git 和提交作业；Python 和 GPU 工作全部通过 `sbatch` 在计算节点执行。
+On NTU TC2, use the head node only for editing, Git operations, and job submission. Run all Python and GPU workloads on compute nodes through `sbatch`.
 
 ```bash
 export AI6132_CODE="$PWD"
 export AI6132_CPU_ENV=/absolute/path/to/conda/environment
-sbatch 02-pilot/tc2/run_cpu.sh dataset --verify 01-dataset/cases.canonical.csv   # 校验输入
-sbatch 07-analysis/make_report_figures.sh                                        # 重绘报告图
-sbatch 08-report/build_report.sh                                                 # 编译报告和贡献说明
+sbatch 02-pilot/tc2/run_cpu.sh dataset --verify 01-dataset/cases.canonical.csv   # Validate inputs
+sbatch 07-analysis/make_report_figures.sh                                     # Regenerate report figures
+sbatch 08-report/build_report.sh                                             # Compile the report and contribution statement
 ```
 
-各模型的生成命令见 [Wan2.2](03-generation/Wan2.2/BENCHMARK.md)、[Hunyuan](03-generation/hunyuan_video/README.md)、[LTX](03-generation/ltx_video/README.md)、[LongCat](03-generation/longcat_video/README.md)；评估流程见 04–06 各目录说明。
+For model generation commands, see [Wan2.2](03-generation/Wan2.2/BENCHMARK.md), [Hunyuan](03-generation/hunyuan_video/README.md), [LTX](03-generation/ltx_video/README.md), and [LongCat](03-generation/longcat_video/README.md). Evaluation workflows are documented in directories 04–06.
