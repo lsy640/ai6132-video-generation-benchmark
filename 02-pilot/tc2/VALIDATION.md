@@ -1,6 +1,67 @@
 # TC2 环境验证记录
 
-## 2026-11-15：C 的 13B 修订
+## 当前范围与状态快照
+
+截至2026-11-16 15:29（新加坡时间）：四模型96条原片接收完成；VBench224项和四份人评收表完成；Qwen v3.5前两个分片已处理24条、第三分片运行中，原严格质量门槛仍失败。以下历史作业只证明各自冻结版本；旧节中的“待接收／运行中／待评分”均是当次状态，当前结论以本节和下述2026-11-16更新为准。
+
+## 2026-11-16：LongCat审查修复与发布
+
+PR #4、#5将LongCat记录及生成／交接代码合入`e501e07`。同步审查作业55007中，原版所选回归63项、保留本地扩展的整合回归91项均通过；作业末尾因补充复现脚本覆盖独占写入的合成CSV而FAILED/1:0。修正复现脚本后，55010在TC2N01以COMPLETED/0:0完成，确认临时目录越出Home、接收校验缺少已发布输出摘要绑定、重试耗尽后保留非终态三项问题。没有把55007记作正常结束。
+
+修复验证55016在TC2N01以**COMPLETED/0:0、3分44秒**完成。申请MGPU-TC2/normal、1节点、1CPU、2G、0GPU、15分钟，无节点绑定；实际分配2CPU。提交前查询的normal上限为10CPU、30G、1GPU、最多2个运行作业、6小时，该记录不代替后续提交前的实时查询。使用个人env-v2：Python3.11.18、Pillow11.3.0、PyAV18.1.0、NumPy1.26.4；未重建历史测量依赖或重跑GPU生成。
+
+- 发布候选：LongCat25、LTX30、人评19、共享benchmark15，共**89项通过**。
+- 保留本地Qwen扩展的关联整合：LongCat25、共享benchmark/Qwen43，共**68项通过**，未重跑独立浏览器套件。两个集合有重叠，不称为157项不同回归。
+- 源码前后SHA256及历史记录**310/310项MANIFEST**校验通过；`frozen/`原始字节保持不变。
+
+修复为：测试临时文件遵循TMPDIR；export/verify先绑定仓库已发布`source_runs_sha256`再解码；新worker在重试耗尽时保留attempt并明确失败，收尾将非终态记为失败，最终有失败返回1、全成功返回0。`rebuild_batch.py`复制当前worker并冻结哈希；旧批次仍保留旧代码，不能通过替换历史文件破坏审计链。
+
+7个源码、测试及说明文件已以**`d9987f30cdc5fce33acc6a166fd418fe227325f7`**推送main，发布时本地与实际远端SHA相同、差异0/0，独立修复工作树干净。主目录原有Qwen、人评及其他未提交改动逐文件哈希不变，未纳入该提交。详细脚本、日志、备份和校验记录位于个人`ai6132-review-evidence/longcat-fixes-20261116/`；此前审查位于`main-sync-review-20261116/`。
+
+## 2026-11-16：人评、VBench与当前Qwen诊断
+
+VBench54818已COMPLETED/0:0，包含复用的ABC168项和新增D56项，共224项；独立审计54853的`report-review/verified/VALIDATED.json`为passed。人评54957只读接收A/B/C/D四份有效表，每份96条；`human-reference/analysis-v2/ANALYSIS.json`记录384行、1536维度槽位，四维各384个数值、0个NA及0个缺失。四维序数α依次为0.656077、0.572817、0.582075、0.537587。原表与开发样例、人评顺序及匿名性局限保留，不把收表／一致性计算视为Qwen校准通过。
+
+Qwen v3.5状态快照：
+
+| 阶段 | 作业 | 截至15:29状态 | 结果范围 |
+| --- | --- | --- | --- |
+| 开发检查 | 54992 | COMPLETED/0:0，26分21秒 | 70/70视图结构有效，诊断技术准入通过；严格门槛仍失败 |
+| 全量第1片 | 54993 | COMPLETED/0:0，27分33秒 | 第1—12条已处理，12条聚合success |
+| 全量第2片 | 55005 | COMPLETED/0:0，22分06秒 | 第13—24条已处理，11条success、clip_0020为missing_view |
+| 全量第3片 | 55013 | RUNNING，TC2N08 | 第25—36条；已出现clip_0026的missing_view，分片尚未终结 |
+
+开发检查保留4个乱序控制及手部缺陷漏检，共5项原门槛失败；`DIAGNOSTIC_ACCEPTANCE.json`为`technical_acceptance_passed=true`、`original_calibration_passed=false`、`independent_human_validated=false`。结构有效不代表评分正确；作业正常退出也不代表每条聚合有效，missing_view继续留空，不补分、不当作生成失败。
+
+当前GPU分片使用独立`source32-fast-final/`快照、TC2N08、8CPU、28G、1GPU、3小时。每12视频串行处理；当前分片成功退出后才经Head提交后继，不能把尚无job ID的后续任务写作已提交。96×5视图终结后再复核并生成`08-report/evaluation-20261116-fast-diagnostic/report.md`，最终报告及实际图表检查尚未完成。日志、fast_jobs.csv及固定源码见个人`ai6132-review-evidence/qwen-repair-20261116/`，协议见[QWEN_V3.md](../../06-vlm-evaluation/QWEN_V3.md)。
+
+## 2026-11-15：B、C 的 2B 交付独立验收与历史诊断评估
+
+本节C的所有原片及质量评分均来自历史LTX 2B批次，不代表新13B结果。
+
+B正式生成54414在TC2N08/L40S完成，**COMPLETED / 0:0 / 2小时50分钟**；24/24成功，18×129帧、6×513帧，848×480/24fps。独立验收54435在同节点完成，**COMPLETED / 0:0 / 24秒**，逐条完整解码、视频哈希、冻结输入/配置及环境核验通过。结果见[B生成说明](../../03-generation/hunyuan_video/README.md#当前结果)；逐例摘要`03-generation/hunyuan_video/FORMAL_VALIDATION.json`保留在个人工作区，未随本文发布。旧OOM批次继续保留。
+
+C交接包独立验收54515在TC2N01完成，**COMPLETED / 0:0 / 25秒**：24条全部完整解码通过，规范prompt、seed、图片哈希、来源/目标帧数、请求/结果/CSV及视频SHA256一致。768×432/24fps，18短＋6长，已派生case_0001至case_0024记录，原件不变。个人接收凭据为 `ai6132-b/evaluation/c-intake-20261115/import_receipt.json`，SHA256为 `9d0ccf4831a771b10ae8d766f7026efa7c23955436cab797078a4e65cc5b32a8`。
+
+准备作业54526完成56项回归及两模型48条全片评分副本；其最终源码核对因安装脚本在执行期间更新而退出1，未将该作业记为最终回归验收。最终回归 **54532**：TC2N01、MGPU-TC2/normal、2CPU/2G/0GPU，**COMPLETED / 0:0 / 23秒，57项通过**（LTX18、人评19、共享20）。新增覆盖诊断完整分母、正式约束保持、人评顺序例外冻结、官方首图目录与离线DINO接口，以及整体/分段分数分离和长短统计。实际48条评分副本及全部输入/产物哈希再次核对通过，共112个VBench适用项、96个Qwen整体/窗口请求。42个源码/脚本/测试快照为个人 `ai6132-review-evidence/model-evaluation/sources_54532.sha256`。
+
+模型与评估资产保存在用户指定的独立存储，Head Node只读、TC2N08可写。资产准备54520在TC2N08 **COMPLETED / 0:0 / 5分36秒**，Qwen3-VL-8B固定revision `0c351dd01ed87e9c1b53cbc748cba10e6187ff3b`，逐文件官方Git/LFS核验；VBench固定 `fd18b3d055cb0fc6f066ca90fe2c3c8cbb698490`，DINO、AMT、RAFT及DreamSim权重来源和SHA256独立保留。Conda离线克隆54519因缓存缺包失败；在线克隆54527完成，但固定依赖组合无可用解。恢复54529安装依赖后遇Decord wheel元数据标签告警；独立环境最终验收 **54530** 在TC2N08 **COMPLETED / 0:0 / 1分钟**，Torch2.6.0+cu124/vision0.21.0、SciPy1.15.3、OpenCV4.11.0、timm1.0.12及真实导入通过，Decord完整解码全部48条评分副本。仅该精确pip元数据告警留为已验证的运行时例外，未修改上游包、未说成pip check全部通过；生成环境保持不变。
+
+真实诊断GPU作业 **54533** 在TC2N08/L40S运行18分03秒，完成 **112/112 VBench指标、48/48 Qwen整体评分、48/48长片窗口评分**，96次评分首次回复均为合法JSON。四项VBench长片预检与Qwen128帧预检通过；实际视频视觉输入128×3×192×384、video_grid_thw=64×12×24，首图768×416，符合32倍数和既定像素预算。Qwen所有评分请求的最大allocated为 **18529.46 MiB**。
+
+54533终态为 **FAILED / 1:0**，原因仅为最后导出CSV时，默认ASCII环境读取中文证据触发UnicodeDecodeError；全部逐请求结果已经成功保存。未将该作业写成正常退出。CPU恢复 **54549** 在TC2N08 **COMPLETED / 0:0 / 16秒**：使用原冻结源码和环境、设置UTF-8，核对原批次后只重建CSV和统计，硬性禁止模型调用，记录model_calls=0。原始回复、成绩和batch均未修改。
+
+独立CPU复核 **54550** 在TC2N01 **COMPLETED / 0:0 / 7秒**，逐项交叉核对官方原始结果、CSV、Qwen原始回复/证据、32/128帧采样及视觉网格，并用NumPy独立复算50组均值/中位数/四分位数，全部通过。报告在个人 `ai6132-b/evaluation/bc-diagnostic-20261115/analysis-v1/`，含report.md、metrics.csv、summary.json、window_profile_54550.csv、VALIDATED_54550.json及evaluation_notes.md。summary.json的SHA256为 `af2c8a07e053b6b1780f42ac3bac27a5a1902147d819e567dda9a6d4af33de51`，report.md为 `0dc7d420f50d71d35a602d5cb758e05742eb9f67b91a2e64147364c298924ebc`。当次实际评分源码另存个人证据目录tested_source_54533.tar.gz。
+
+后续编码修复显式以UTF-8读取评估JSON，并在CPU/GPU评估入口设置PYTHONUTF8=1；旧批次的源码哈希与原记录保持不变。修复回归 **54553** 在TC2N01 **COMPLETED / 0:0 / 25秒，58项通过**（LTX18、人评19、共享21），新增在LC_ALL=C、关闭Python UTF-8模式的子进程中，验证中文证据导出和中文批次统计。当前源码及脚本快照sources_54553.sha256再次核对一致；没有重新执行真实模型评分。
+
+本批描述性均值中Hunyuan略高、LTX生成耗时更低。两模型Qwen三个整体维度的中位数及Q1/Q3均为5，存在明显天花板现象，不能由均分差认定稳定优势。此处为两模型诊断结果；四模型正式比较与独立人评仍待完成，人评顺序例外见PLAN.md。
+
+## 2026-11-15：C 的 13B 正式批次与独立接收
+
+PR #3 独立审查作业 **54638** 在 TC2N01 以 MGPU-TC2/normal、2CPU/2G/0GPU 完成，**COMPLETED / 0:0 / 1分02秒**。64项回归通过（LTX30、人评19、共享15），实际13B和历史2B各24条原片均通过完整解码、冻结输入、配置、记录及哈希核验。接收副本保持原视频字节，使用可搬移相对路径，原始交付记录未改写。个人证据目录为 `ai6132-review-evidence/pr3/`，日志 `check_54638.out/.err`，源码快照 `sources_54638.sha256` 结束时复核一致。此项仅验收文件和生成协议；新13B的VBench/Qwen及正式人工评分仍待进行。
+
+合并前保留B本地诊断评估与UTF-8修复，在隔离工作区解决文档冲突并进行兼容性回归。作业 **54643** 在TC2N01以MGPU-TC2/normal、2CPU/2G/0GPU完成，**COMPLETED / 0:0 / 19秒，70项通过**（LTX30、人评19、共享21）。脚本为 `validate_integration.sh`，日志 `integration_54643.out/.err`，结束时源码与 `integration_sources_54643.sha256` 全部一致。LTX安装脚本补齐partition/QoS、Conda激活的nounset保护，LTX作业入口显式启用UTF-8；没有重新生成视频或重跑质量评分。PR代码合并到main，本地诊断评估修改继续保留为未提交工作。
 
 全组同意将 C 改为 LTX-Video 13B v0.9.8 Distilled，BF16、官方两阶段 7+3 timesteps、第二阶段 tone map compression ratio 0.6、关闭提示词扩写。正式作业 **54620** 已在独立批次 `formal-13b-20261115` 完成全部 **24/24**，**COMPLETED / 0:0 / 30 分 27 秒**。公共规范清单及输入、seed42、18×129＋6×513 帧、768×432 / 24 fps 不变。逐视频哈希和完整统计见 [正式批次汇总 JSON](ltx13b-formal-summary.json)。
 
@@ -10,7 +71,7 @@ case_0001 的 129 帧作业 **54610** 与 513 帧作业 **54612** 已成功，`e
 
 CPU 作业 **54622** 在 TC2N01 完成，**COMPLETED / 0:0 / 44 秒**：LTX **30** 项、人评 **19** 项、共享工具 **15** 项，共 **64 项通过**，并使用 FFmpeg 完整解码正式 24 条。独立本地 PyAV 核验再次解码全部 **24 条 / 5400 帧**，检查输入、源码、原始记录和可搬移交付副本的哈希均通过。正式短片平均 **25.0237 秒**，长片平均 **206.1915 秒**；详细计时和显存口径见 [C 批次报告](C_FORMAL_REPORT.md)。
 
-提交前本地 `test_runner.py` 17 项通过，完整配置与固定上游 13B YAML 核对通过。正式作业使用独立部署源码快照，schema 3 的 `source_receipt.json` 绑定源码及配置；生成代码 commit `dbb4df37dec06fc4b388b0b3fbe717e4436abf8f` 与正式部署的生成文件哈希一致。上述为 C 的技术验收，B 独立接收验收和正式人工评分仍待完成。
+提交前本地 `test_runner.py` 17 项通过，完整配置与固定上游 13B YAML 核对通过。正式作业使用独立部署源码快照，schema 3 的 `source_receipt.json` 绑定源码及配置；生成代码 commit `dbb4df37dec06fc4b388b0b3fbe717e4436abf8f` 与正式部署的生成文件哈希一致。上述为 C 的技术验收；B 独立接收结果见本节首段，正式人工评分仍待完成。
 
 部署检查 54619 因缺少原版测试辅助文件 `make_smoke_case.py` 而在 3 秒后退出，未创建正式批次、未生成视频。补齐文件后以 54620 重提交，生成代码未变；失败日志保留。
 
@@ -128,4 +189,4 @@ SLURM作业 **54331** 在 **TC2N02** 执行，申请MGPU-TC2/normal、1节点、
 
 真实GPU显存回归 **54413**：TC2N08/L40S、2CPU/12G/1GPU，**COMPLETED / 0:0 / 2分6秒**。在额外18GiB GPU驻留缓冲下，将随机诊断潜变量解码为 **[1,3,513,480,848]**，全部值有限；解码耗时116.70秒，峰值allocated **28001.53MiB**、reserved **33472MiB**。来源代码SHA256为 `6b5bd52b6af5b583aa6863eeeba8efb00eceb99587aa92a8b01147485f0cde8e`。该测试验证实际解码资源路径，不计入模型正式生成结果；日志为 `vae_memory_54413.out` / `.err`，结果保存在个人 `ai6132-b/environment/vae_memory_54413/result.json`。
 
-恢复后的正式批次 **54414** 已在TC2N08启动，采用同一24例输入、seed42、8步和129/513帧，固定上述解码配置；新输出目录 `ai6132-b/outputs/formal-20261114-vae64/` 保留与首轮的边界。日志为 `formal_54414.out` / `.err`。**当前为恢复生成进行中，代码修复按用户要求先行同步main；正式完成须以24例全片解码验收为准。**
+恢复后的正式批次 **54414** 在TC2N08启动时采用同一24例输入、seed42、8步和129/513帧，固定上述解码配置；新输出目录 `ai6132-b/outputs/formal-20261114-vae64/` 保留与首轮的边界。日志为 `formal_54414.out` / `.err`。这是启动时的历史记录；随后54414已完成24/24，并经54435独立全片验收，结果见上文B、C历史交付节。
